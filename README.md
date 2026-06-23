@@ -2,6 +2,12 @@
 
 A personal 50 states travel atlas built with React, Vite, MapLibre, local static map data, and optional Supabase-backed persistence. Public visitors can view the atlas, while writes are protected by a Supabase Edge Function.
 
+- Source repo: `https://github.com/altayatik/states-atlas`
+- Public deployment repo: `https://github.com/altayatik/states`
+- Public URL: `https://altayatik.com/states/`
+- Editor URL for now: `https://altayatik.com/states/#/edit`
+- Preferred future editor URL: `https://altayatik.com/states-edit/`
+
 ## Local Dev
 
 ```bash
@@ -25,6 +31,8 @@ npm run deploy
 
 This deploys the built `dist` directory to GitHub Pages with the `/states/` base path.
 The source repo is `altayatik/states-atlas`; the GitHub Pages deployment repo is `altayatik/states` so the public URL resolves at `/states/`.
+
+The current editor route is deployed inside the same app at `/states/#/edit`. To deploy the preferred exact `/states-edit/` URL later without changing this app's public base, create a separate Pages deployment for that path, build with a `/states-edit/` base, and point it at the same source code/editor route.
 
 ## Supabase Setup
 
@@ -84,6 +92,75 @@ for each row
 execute function public.set_updated_at();
 ```
 
+Reference setup SQL:
+
+```sql
+create table if not exists public.state_travel_entries (
+  id uuid primary key default gen_random_uuid(),
+  state_code text not null unique,
+  state_name text not null,
+  status text not null,
+  first_visited_year int,
+  favorite_memory text,
+  badges text[] not null default '{}',
+  vibe_rating int,
+  honorable_mention boolean not null default false,
+  cities_visited text[] not null default '{}',
+  parks_visited text[] not null default '{}',
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  constraint state_code_format check (state_code ~ '^[A-Z]{2}$'),
+  constraint state_status_valid check (
+    status in (
+      'not_visited',
+      'passed_through',
+      'visited',
+      'stayed_overnight',
+      'lived_there',
+      'favorite'
+    )
+  ),
+  constraint first_visited_year_valid check (
+    first_visited_year is null
+    or first_visited_year between 1900 and 2100
+  ),
+  constraint vibe_rating_valid check (
+    vibe_rating is null
+    or vibe_rating between 1 and 5
+  )
+);
+
+alter table public.state_travel_entries enable row level security;
+
+drop policy if exists "Public can read state travel entries"
+on public.state_travel_entries;
+
+create policy "Public can read state travel entries"
+on public.state_travel_entries
+for select
+using (true);
+
+create or replace function public.set_updated_at()
+returns trigger
+language plpgsql
+as $$
+begin
+  new.updated_at = now();
+  return new;
+end;
+$$;
+
+drop trigger if exists set_state_travel_entries_updated_at
+on public.state_travel_entries;
+
+create trigger set_state_travel_entries_updated_at
+before update on public.state_travel_entries
+for each row
+execute function public.set_updated_at();
+
+NOTIFY pgrst, 'reload schema';
+```
+
 ## Supabase Secrets
 
 Set these secrets in Supabase. Do not put real values in GitHub or frontend env files.
@@ -124,6 +201,8 @@ VITE_SUPABASE_ANON_KEY=
 ```
 
 If these are missing, the app uses localStorage fallback. If they exist, reads come from Supabase and writes go through the `states-admin` Edge Function.
+
+The public `/states/` page is read-only. The editor at `/states/#/edit` gates editing behind the secret phrase and stores only the returned admin token in `sessionStorage`.
 
 ## Security Model
 

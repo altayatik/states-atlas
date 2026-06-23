@@ -211,6 +211,13 @@ Deno.serve(async (request) => {
   }
 
   try {
+    if (body.action === 'validate') {
+      return jsonResponse(request, 200, {
+        adminToken: auth.adminToken,
+        success: true,
+      })
+    }
+
     const supabase = getSupabaseAdminClient()
 
     if (body.action === 'upsert') {

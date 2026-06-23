@@ -2,7 +2,7 @@ import { Edit3, MapPin, Mountain, Star } from 'lucide-react'
 import { BADGE_LABELS } from '../data/states'
 import { formatList, formatStatus } from '../utils/formatters'
 
-export function StateDetailPanel({ state, cities, parks, selectedMapItem, onEdit }) {
+export function StateDetailPanel({ state, cities, parks, selectedMapItem, showEdit = false, onEdit }) {
   if (!state) {
     return (
       <aside className="detail-panel detail-panel--empty">
@@ -84,9 +84,11 @@ export function StateDetailPanel({ state, cities, parks, selectedMapItem, onEdit
           <p className="eyebrow">{formatStatus(state.status)}</p>
           <h2 id="state-detail-title">{state.name}</h2>
         </div>
-        <button aria-label={`Edit ${state.name}`} className="icon-button" type="button" onClick={onEdit}>
-          <Edit3 size={18} aria-hidden="true" />
-        </button>
+        {showEdit && (
+          <button aria-label={`Edit ${state.name}`} className="icon-button" type="button" onClick={onEdit}>
+            <Edit3 size={18} aria-hidden="true" />
+          </button>
+        )}
       </div>
 
       <div className="vibe-meter" aria-label={`Vibe rating ${state.vibeRating || 0} out of 5`}>

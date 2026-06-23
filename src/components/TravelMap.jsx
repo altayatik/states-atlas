@@ -154,6 +154,8 @@ export function TravelMap({
   const [showStates, setShowStates] = useState(true)
   const [showCities, setShowCities] = useState(true)
   const [showParks, setShowParks] = useState(true)
+  const [showLabels, setShowLabels] = useState(false)
+  const [hoveredMapItem, setHoveredMapItem] = useState(null)
 
   const statesGeoJson = useMemo(() => {
     const stateByCode = new Map(states.map((state) => [state.code, state]))
@@ -363,6 +365,17 @@ export function TravelMap({
         if (park) latestMapDataRef.current.onSelectPark(park)
       })
 
+      map.on('mouseenter', 'metros-fill', (event) => {
+        const id = event.features?.[0]?.properties?.id
+        if (id) setHoveredMapItem({ id, type: 'metro' })
+      })
+      map.on('mouseleave', 'metros-fill', () => setHoveredMapItem(null))
+      map.on('mouseenter', 'parks-fill', (event) => {
+        const id = event.features?.[0]?.properties?.id
+        if (id) setHoveredMapItem({ id, type: 'park' })
+      })
+      map.on('mouseleave', 'parks-fill', () => setHoveredMapItem(null))
+
       ;['states-fill', 'metros-fill', 'parks-fill'].forEach((layerId) => {
         map.on('mouseenter', layerId, () => {
           map.getCanvas().style.cursor = 'pointer'
@@ -418,7 +431,7 @@ export function TravelMap({
         .addTo(map)
 
       labelsRef.current.push(marker)
-      return { element, item, marker, type }
+      return { element, item, type }
     }
 
     const labels = [
@@ -430,9 +443,10 @@ export function TravelMap({
       const zoom = map.getZoom()
       labels.forEach(({ element, item, type }) => {
         const isSelected = selectedMapItem?.id === item.id
-        const isFocused = item.stateCodes.includes(selectedStateCode) || isSelected
+        const isHovered = hoveredMapItem?.id === item.id && hoveredMapItem?.type === type
         const layerVisible = type === 'metro' ? showCities : showParks
-        element.hidden = !layerVisible || (!isFocused && zoom < 5.2)
+        const labelsAllowedByZoom = showLabels && zoom >= 5.8
+        element.hidden = !layerVisible || !(isSelected || isHovered || labelsAllowedByZoom)
       })
     }
 
@@ -446,7 +460,7 @@ export function TravelMap({
       labelsRef.current.forEach((marker) => marker.remove())
       labelsRef.current = []
     }
-  }, [isMapReady, metros, parks, selectedMapItem, selectedStateCode, showCities, showParks])
+  }, [hoveredMapItem, isMapReady, metros, parks, selectedMapItem, showCities, showLabels, showParks])
 
   const resetView = () => {
     if (mapRef.current) fitDefaultBounds(mapRef.current)
@@ -496,8 +510,12 @@ export function TravelMap({
             <input checked={showParks} type="checkbox" onChange={(event) => setShowParks(event.target.checked)} />
             Parks
           </label>
+          <label>
+            <input checked={showLabels} type="checkbox" onChange={(event) => setShowLabels(event.target.checked)} />
+            Labels
+          </label>
         </div>
-        <p>Pinch or scroll to explore. Zoom in to reveal cities and parks.</p>
+        <p>Pinch or scroll to explore.</p>
       </div>
 
       <div className="map-shell map-shell--maplibre">

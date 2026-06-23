@@ -114,6 +114,27 @@ export async function upsertStateTravelEntry(entry, auth = {}) {
   }
 }
 
+export async function validateAdminSecret(secretPhrase) {
+  if (!isSupabaseConfigured) {
+    return { adminToken: '', success: Boolean(secretPhrase?.trim()) }
+  }
+
+  const response = await fetch(`${SUPABASE_URL}/functions/v1/states-admin`, {
+    method: 'POST',
+    headers: getHeaders(),
+    body: JSON.stringify({
+      action: 'validate',
+      secretPhrase,
+    }),
+  })
+  const payload = await readJsonResponse(response)
+
+  return {
+    adminToken: payload.adminToken,
+    success: Boolean(payload.success),
+  }
+}
+
 export async function deleteStateTravelEntry(entryIdOrStateCode, auth = {}) {
   if (!isSupabaseConfigured) {
     const storedStates = loadStoredStates() ?? []

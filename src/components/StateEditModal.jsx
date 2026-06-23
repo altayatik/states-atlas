@@ -6,7 +6,6 @@ export function StateEditModal({
   isOpen,
   state,
   states,
-  requiresSecret,
   saveError,
   onCancel,
   onSave,
@@ -14,15 +13,10 @@ export function StateEditModal({
 }) {
   const titleId = useId()
   const [draft, setDraft] = useState(state)
-  const [secretPhrase, setSecretPhrase] = useState('')
 
   useEffect(() => {
     setDraft(state)
   }, [state])
-
-  useEffect(() => {
-    if (isOpen) setSecretPhrase('')
-  }, [isOpen])
 
   useEffect(() => {
     if (!isOpen) return
@@ -80,7 +74,7 @@ export function StateEditModal({
               ...draft,
               firstVisitedYear: draft.firstVisitedYear ? Number(draft.firstVisitedYear) : '',
               updatedAt: new Date().toISOString(),
-            }, { secretPhrase })
+            })
           }}
         >
           <label>
@@ -187,22 +181,6 @@ export function StateEditModal({
               />
             </label>
           </div>
-
-          {requiresSecret && (
-            <div className="secret-panel">
-              <label>
-                Secret phrase
-                <input
-                  autoComplete="current-password"
-                  placeholder="Enter our private phrase"
-                  type="password"
-                  value={secretPhrase}
-                  onChange={(event) => setSecretPhrase(event.target.value)}
-                />
-              </label>
-              <p>Only our road crew can edit the atlas. After the correct phrase, this browser can edit temporarily.</p>
-            </div>
-          )}
 
           {saveError && <p className="form-error" role="alert">{saveError}</p>}
 
