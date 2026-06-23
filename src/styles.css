@@ -53,8 +53,6 @@ button:focus-visible,
 input:focus-visible,
 select:focus-visible,
 textarea:focus-visible,
-.state-path:focus-visible,
-.pin:focus-visible,
 .maplibregl-canvas:focus-visible {
   outline: 3px solid #1e7898;
   outline-offset: 3px;
@@ -329,44 +327,19 @@ textarea:focus-visible,
   align-items: center;
 }
 
-.map-subtitle {
-  max-width: 620px;
-  margin: 6px 0 0;
-  color: #665241;
-  font-weight: 700;
-}
-
-.map-toolbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 14px;
-  margin-bottom: 12px;
-}
-
-.map-toolbar p {
-  max-width: 360px;
-  margin: 0;
-  color: #6f5845;
-  font-size: 0.88rem;
-  font-weight: 800;
-  text-align: right;
-}
-
-.layer-toggles {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  margin-bottom: 0;
-}
-
-.layer-toggles label,
 .checkbox-line,
 .checkbox-grid label {
   display: inline-flex;
   align-items: center;
   gap: 8px;
   min-height: 40px;
+  font-weight: 800;
+}
+
+.map-hint {
+  margin: -2px 0 12px;
+  color: #6f5845;
+  font-size: 0.9rem;
   font-weight: 800;
 }
 
@@ -445,107 +418,10 @@ textarea:focus-visible,
   display: none;
 }
 
-.map-label {
-  display: inline-flex;
-  max-width: 150px;
-  padding: 5px 8px;
-  border: 1px solid rgba(45, 36, 30, 0.18);
-  border-radius: 999px;
-  background: rgba(255, 248, 233, 0.92);
-  color: #2d241e;
-  font-size: 0.74rem;
-  font-weight: 900;
-  line-height: 1.1;
-  pointer-events: none;
-  text-align: center;
-  text-wrap: balance;
-  box-shadow: 0 8px 20px rgba(45, 36, 30, 0.14);
-}
-
-.map-label--park {
-  border-color: rgba(47, 122, 87, 0.28);
-  color: #255b41;
-}
-
 .map-card--central {
   background:
     linear-gradient(180deg, rgba(255, 248, 230, 0.94), rgba(246, 231, 202, 0.9)),
     repeating-linear-gradient(45deg, rgba(86, 54, 34, 0.035) 0 1px, transparent 1px 9px);
-}
-
-.us-map {
-  display: block;
-  width: 100%;
-  aspect-ratio: 1.62;
-  min-height: 320px;
-  touch-action: manipulation;
-}
-
-.state-path {
-  stroke: #6c5643;
-  stroke-width: 1.2;
-  transition:
-    filter 160ms ease,
-    stroke-width 160ms ease;
-}
-
-.state-path:hover,
-.state-path:focus-visible {
-  filter: brightness(1.06) saturate(1.12);
-  stroke: #b43d2d;
-  stroke-width: 2.6;
-}
-
-.state-path--selected {
-  stroke: #2d241e;
-  stroke-width: 3.2;
-}
-
-.pin {
-  cursor: pointer;
-}
-
-.pin circle {
-  fill: #b43d2d;
-  stroke: #fff8e9;
-  stroke-width: 2.4;
-}
-
-.pin--park path {
-  fill: #2f7a57;
-  stroke: #fff8e9;
-  stroke-width: 2.4;
-}
-
-.pin--active circle,
-.pin--active path {
-  filter: drop-shadow(0 4px 4px rgba(45, 36, 30, 0.28));
-  stroke: #f2bf45;
-  stroke-width: 3;
-}
-
-.pin text {
-  paint-order: stroke;
-  fill: #2d241e;
-  font-size: 13px;
-  font-weight: 900;
-  stroke: #fff8e9;
-  stroke-width: 4px;
-}
-
-.map-callout {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px 10px;
-  align-items: baseline;
-  margin-top: 12px;
-  padding: 10px 12px;
-  border-radius: 12px;
-  background: #efe0c4;
-}
-
-.map-callout strong {
-  color: #843622;
 }
 
 .legend {
@@ -681,7 +557,7 @@ textarea:focus-visible,
 .memory-grid {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 12px;
+  gap: 10px;
 }
 
 .achievement,
@@ -694,8 +570,8 @@ textarea:focus-visible,
 
 .achievement {
   display: flex;
-  gap: 12px;
-  padding: 14px;
+  gap: 10px;
+  padding: 12px;
   opacity: 0.72;
 }
 
@@ -710,8 +586,8 @@ textarea:focus-visible,
 .achievement__icon {
   display: grid;
   flex: 0 0 auto;
-  width: 42px;
-  height: 42px;
+  width: 36px;
+  height: 36px;
   border-radius: 999px;
   place-items: center;
   background: #214f57;
@@ -727,7 +603,7 @@ textarea:focus-visible,
 .memory-card p {
   margin: 0 0 10px;
   color: #665241;
-  font-size: 0.92rem;
+  font-size: 0.86rem;
 }
 
 .memory-card {
@@ -1273,16 +1149,6 @@ textarea:focus-visible,
     align-items: flex-start;
   }
 
-  .map-toolbar {
-    align-items: flex-start;
-    flex-direction: column;
-  }
-
-  .map-toolbar p {
-    max-width: none;
-    text-align: left;
-  }
-
   .map-controls button {
     width: 48px;
     min-height: 48px;
@@ -1302,10 +1168,6 @@ textarea:focus-visible,
     min-width: 58px;
     min-height: 50px;
     padding: 7px 8px;
-  }
-
-  .us-map {
-    min-height: 260px;
   }
 
   .state-row {
@@ -1358,10 +1220,6 @@ textarea:focus-visible,
   .map-shell--maplibre {
     height: 58vh;
     min-height: 360px;
-  }
-
-  .us-map {
-    min-height: 230px;
   }
 
   .legend {

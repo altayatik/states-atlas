@@ -5,14 +5,11 @@ import { TravelMap } from './components/TravelMap'
 import { StateDetailPanel } from './components/StateDetailPanel'
 import { StateEditModal } from './components/StateEditModal'
 import { Achievements } from './components/Achievements'
-import { LatestMemories } from './components/LatestMemories'
 import { AtlasEditor } from './components/AtlasEditor'
 import { PasswordGate } from './components/PasswordGate'
 import { states as defaultStates } from './data/states'
 import { cities } from './data/cities'
 import { parks } from './data/parks'
-import { metroAreas } from './data/metroAreas'
-import { parkBoundaries } from './data/parkBoundaries'
 import { evaluateAchievements } from './utils/achievements'
 import { getRegionalProgress, getStats } from './utils/stats'
 import { mergeStoredStates } from './utils/storage'
@@ -39,7 +36,6 @@ function getIsEditorRoute() {
 function App() {
   const [states, setStates] = useState(defaultStates)
   const [selectedStateCode, setSelectedStateCode] = useState('CA')
-  const [selectedMapItem, setSelectedMapItem] = useState(null)
   const [isEditOpen, setIsEditOpen] = useState(false)
   const [isLoadingEntries, setIsLoadingEntries] = useState(true)
   const [saveError, setSaveError] = useState('')
@@ -87,7 +83,6 @@ function App() {
 
   const selectState = (code) => {
     setSelectedStateCode(code)
-    setSelectedMapItem(null)
   }
 
   const openEdit = (code = selectedStateCode) => {
@@ -199,31 +194,16 @@ function App() {
       <main>
         <div className="atlas-layout">
           <TravelMap
-            metros={metroAreas}
-            onSelectMetro={(metro) => {
-              setSelectedMapItem({ ...metro, type: 'metro' })
-              setSelectedStateCode(metro.stateCodes[0])
-            }}
-            onSelectPark={(park) => {
-              setSelectedMapItem({ ...park, type: 'park' })
-              setSelectedStateCode(park.stateCodes[0])
-            }}
             onSelectState={selectState}
-            parks={parkBoundaries}
-            selectedMapItem={selectedMapItem}
             selectedStateCode={selectedStateCode}
             states={states}
           />
           <StateDetailPanel
-            cities={cities}
-            parks={parks}
-            selectedMapItem={selectedMapItem}
             state={selectedState}
           />
         </div>
 
         <Achievements achievements={achievements} />
-        <LatestMemories states={states} />
       </main>
     </div>
   )

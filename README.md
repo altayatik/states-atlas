@@ -1,6 +1,6 @@
 # Altay & Aidi's Road Atlas
 
-A personal 50 states travel atlas built with React, Vite, MapLibre, local static map data, and optional Supabase-backed persistence. Public visitors can view the atlas, while writes are protected by a Supabase Edge Function.
+A personal 50 states travel atlas built with React, Vite, MapLibre, local static map data, and optional Supabase-backed persistence. The public map currently focuses on clean state-level tracking, while writes are protected by a Supabase Edge Function.
 
 - Source repo: `https://github.com/altayatik/states-atlas`
 - Public deployment repo: `https://github.com/altayatik/states`
@@ -35,6 +35,8 @@ The source repo is `altayatik/states-atlas`; the GitHub Pages deployment repo is
 The current editor route is deployed inside the same app at `/states/#/edit`. To deploy the preferred exact `/states-edit/` URL later without changing this app's public base, create a separate Pages deployment for that path, build with a `/states-edit/` base, and point it at the same source code/editor route.
 
 The public header includes a small `Edit atlas` link to `/states/#/edit`. The editor is still protected by the Supabase secret phrase gate.
+
+The public `/states/` page is intentionally simple: header, compact stats, state-level map, selected state details, and achievements. City/metro outlines, national park outlines, and their map labels are temporarily disabled until the map layer design is cleaned up.
 
 ## Supabase Setup
 
@@ -208,7 +210,7 @@ The public `/states/` page is read-only. The editor at `/states/#/edit` gates ed
 
 The editor uses a dropdown-first workflow: choose one state, edit that state, then save. City and national park selections are stored as arrays in `cities_visited` and `parks_visited`; the frontend maps those to `citiesVisited` and `parksVisited`.
 
-Map labels are automatic. City and park labels are hidden at the default view and appear on selection, hover, or higher zoom. Alaska and Hawaii are represented as simplified clickable inset buttons so they remain clean and selectable without distorted geometry.
+City and national park selections are still editable and shown textually in the selected state detail panel. They are not rendered as public map outlines in the current simplified map. Alaska and Hawaii are represented as simplified clickable inset buttons so they remain clean and selectable without distorted geometry.
 
 ## Security Model
 
