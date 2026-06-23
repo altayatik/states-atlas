@@ -1,8 +1,47 @@
 import { Edit3, MapPin, Mountain, Star } from 'lucide-react'
 import { BADGE_LABELS } from '../data/states'
 import { formatList, formatStatus } from '../utils/formatters'
+import { getRelatedStateNames, isMetroVisited, isParkVisited } from '../utils/places'
 
-export function StateDetailPanel({ state, showEdit = false, onEdit }) {
+export function StateDetailPanel({ selectedItem, state, states = [], showEdit = false, onEdit }) {
+  if (selectedItem?.item) {
+    const { item, type } = selectedItem
+    const relatedStates = getRelatedStateNames(item.stateCodes, states)
+    const isVisited = type === 'metro'
+      ? isMetroVisited(item, states)
+      : isParkVisited(item, states)
+    const isPark = type === 'park'
+
+    return (
+      <aside className="detail-panel detail-panel--place" aria-labelledby="place-detail-title">
+        <div className="detail-panel__header">
+          <div>
+            <p className="eyebrow">{isPark ? 'National park' : 'City area'}</p>
+            <h2 id="place-detail-title">{item.name}</h2>
+          </div>
+          {isPark ? <Mountain size={22} aria-hidden="true" /> : <MapPin size={22} aria-hidden="true" />}
+        </div>
+
+        <dl className="detail-list">
+          <div>
+            <dt>{relatedStates.length > 1 ? 'States' : 'State'}</dt>
+            <dd>{formatList(relatedStates)}</dd>
+          </div>
+          <div>
+            <dt>Atlas status</dt>
+            <dd>{isVisited ? 'Logged in this atlas' : 'Not logged for the related state yet'}</dd>
+          </div>
+          {item.favoriteMemory && (
+            <div>
+              <dt>Memory</dt>
+              <dd>{item.favoriteMemory}</dd>
+            </div>
+          )}
+        </dl>
+      </aside>
+    )
+  }
+
   if (!state) {
     return (
       <aside className="detail-panel detail-panel--empty">

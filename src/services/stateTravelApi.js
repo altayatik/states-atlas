@@ -5,6 +5,8 @@ const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY
 const DEV_EDITOR_PHRASE = import.meta.env.VITE_DEV_EDITOR_PHRASE
 const ADMIN_TOKEN_KEY = 'statesAtlasAdminToken'
 const LEGACY_ADMIN_TOKEN_KEY = 'states-atlas.admin-token.v1'
+const CONFIG_MESSAGE = 'Editor unlock is not configured yet. Check the Supabase function and secrets.'
+const WRONG_SECRET_MESSAGE = 'That secret phrase doesn’t match. Try again.'
 
 export const isSupabaseConfigured = Boolean(SUPABASE_URL && SUPABASE_ANON_KEY)
 
@@ -63,6 +65,10 @@ async function readJsonResponse(response) {
   }
 
   return payload
+}
+
+async function readJsonPayload(response) {
+  return response.json().catch(() => ({}))
 }
 
 export function getStoredAdminToken() {
@@ -139,35 +145,77 @@ export async function validateEditorAccess({ adminToken, secretPhrase } = {}) {
 
       return {
         adminToken: '',
-        message: 'That secret phrase doesn’t match. Try again.',
+        message: WRONG_SECRET_MESSAGE,
         ok: false,
       }
     }
 
     return {
       adminToken: '',
-      message: isLocalDevHost() && !DEV_EDITOR_PHRASE
-        ? 'Local editor unlock needs VITE_DEV_EDITOR_PHRASE in .env.local.'
-        : 'Editor unlock is not configured yet. Check the Supabase function and secrets.',
+      message: CONFIG_MESSAGE,
       ok: false,
     }
   }
 
-  const response = await fetch(`${SUPABASE_URL}/functions/v1/states-admin`, {
-    method: 'POST',
-    headers: getHeaders(),
-    body: JSON.stringify({
-      adminToken: token || undefined,
-      action: 'validate',
-      secretPhrase: trimmedPhrase || undefined,
-    }),
-  })
-  const payload = await readJsonResponse(response)
+  let response
+  try {
+    response = await fetch(`${SUPABASE_URL}/functions/v1/states-admin`, {
+      method: 'POST',
+      headers: getHeaders(),
+      body: JSON.stringify({
+        adminToken: token || undefined,
+        action: 'validate',
+        secretPhrase: trimmedPhrase || undefined,
+      }),
+    })
+  } catch (error) {
+    console.warn('states-admin validation request failed.', error instanceof Error ? error.message : error)
+    return {
+      adminToken: '',
+      message: CONFIG_MESSAGE,
+      ok: false,
+    }
+  }
+
+  const payload = await readJsonPayload(response)
+
+  if (response.status === 401) {
+    return {
+      adminToken: '',
+      message: WRONG_SECRET_MESSAGE,
+      ok: false,
+    }
+  }
+
+  if (!response.ok) {
+    console.warn('states-admin validation failed.', {
+      error: payload.error,
+      status: response.status,
+    })
+    return {
+      adminToken: '',
+      message: CONFIG_MESSAGE,
+      ok: false,
+    }
+  }
+
   const returnedToken = typeof payload.adminToken === 'string' ? payload.adminToken.trim() : ''
+
+  if (payload.ok !== true || !returnedToken) {
+    console.warn('states-admin validation returned an invalid success payload.', {
+      hasAdminToken: Boolean(returnedToken),
+      ok: payload.ok,
+    })
+    return {
+      adminToken: '',
+      message: CONFIG_MESSAGE,
+      ok: false,
+    }
+  }
 
   return {
     adminToken: returnedToken,
-    ok: payload.ok === true && Boolean(returnedToken),
+    ok: true,
   }
 }
 

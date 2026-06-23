@@ -6,6 +6,7 @@ import { Minus, Plus, RotateCcw } from 'lucide-react'
 import usAtlas from 'us-atlas/states-10m.json'
 import { fipsToStateCode, STATUS_COLORS } from '../data/states'
 import { StatusLegend } from './StatusLegend'
+import { isMetroVisited, isParkVisited } from '../utils/places'
 
 const DEFAULT_BOUNDS = [
   [-127, 23],
@@ -53,6 +54,24 @@ const stateFillOpacity = [
   0.94,
 ]
 
+const placeFillOpacity = [
+  'case',
+  ['boolean', ['get', 'selected'], false],
+  0.42,
+  ['boolean', ['get', 'visited'], false],
+  0.28,
+  0.16,
+]
+
+const placeLineWidth = [
+  'case',
+  ['boolean', ['get', 'selected'], false],
+  2.4,
+  ['boolean', ['get', 'visited'], false],
+  1.7,
+  1.1,
+]
+
 function prefersReducedMotion() {
   return window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
 }
@@ -65,8 +84,13 @@ function fitDefaultBounds(map) {
 }
 
 export function TravelMap({
+  metros = [],
+  parks = [],
+  selectedPlace,
   states,
   selectedStateCode,
+  onSelectMetro,
+  onSelectPark,
   onSelectState,
 }) {
   const mapContainerRef = useRef(null)
@@ -77,6 +101,8 @@ export function TravelMap({
 
   const stateByCode = useMemo(() => new Map(states.map((state) => [state.code, state])), [states])
   const insetStates = useMemo(() => states.filter((state) => ['AK', 'HI'].includes(state.code)), [states])
+  const selectedPlaceId = selectedPlace?.item?.id ?? ''
+  const selectedPlaceType = selectedPlace?.type ?? ''
 
   const statesGeoJson = useMemo(() => ({
     type: 'FeatureCollection',
@@ -103,12 +129,50 @@ export function TravelMap({
       .filter(Boolean),
   }), [hoveredStateCode, selectedStateCode, stateByCode])
 
+  const metrosGeoJson = useMemo(() => ({
+    type: 'FeatureCollection',
+    features: metros.map((metro) => ({
+      type: 'Feature',
+      id: metro.id,
+      properties: {
+        id: metro.id,
+        kind: 'metro',
+        name: metro.name,
+        selected: selectedPlaceType === 'metro' && selectedPlaceId === metro.id,
+        visited: isMetroVisited(metro, states),
+      },
+      geometry: metro.geometry,
+    })),
+  }), [metros, selectedPlaceId, selectedPlaceType, states])
+
+  const parksGeoJson = useMemo(() => ({
+    type: 'FeatureCollection',
+    features: parks.map((park) => ({
+      type: 'Feature',
+      id: park.id,
+      properties: {
+        id: park.id,
+        kind: 'park',
+        name: park.name,
+        selected: selectedPlaceType === 'park' && selectedPlaceId === park.id,
+        visited: isParkVisited(park, states),
+      },
+      geometry: park.geometry,
+    })),
+  }), [parks, selectedPlaceId, selectedPlaceType, states])
+
   useEffect(() => {
     latestMapDataRef.current = {
+      metros,
+      metrosGeoJson,
+      onSelectMetro,
+      onSelectPark,
       onSelectState,
+      parks,
+      parksGeoJson,
       statesGeoJson,
     }
-  }, [onSelectState, statesGeoJson])
+  }, [metros, metrosGeoJson, onSelectMetro, onSelectPark, onSelectState, parks, parksGeoJson, statesGeoJson])
 
   useEffect(() => {
     if (!mapContainerRef.current || mapRef.current) return
@@ -141,6 +205,8 @@ export function TravelMap({
       const latest = latestMapDataRef.current
 
       map.addSource('states', { type: 'geojson', data: latest.statesGeoJson, promoteId: 'code' })
+      map.addSource('metros', { type: 'geojson', data: latest.metrosGeoJson, promoteId: 'id' })
+      map.addSource('parks', { type: 'geojson', data: latest.parksGeoJson, promoteId: 'id' })
 
       map.addLayer({
         id: 'states-fill',
@@ -160,6 +226,66 @@ export function TravelMap({
           'line-color': '#6c5643',
           'line-opacity': 0.72,
           'line-width': ['interpolate', ['linear'], ['zoom'], 3, 0.8, 6, 1.4],
+        },
+      })
+
+      map.addLayer({
+        id: 'metros-fill',
+        type: 'fill',
+        source: 'metros',
+        minzoom: 4,
+        paint: {
+          'fill-color': '#1f83a6',
+          'fill-opacity': placeFillOpacity,
+        },
+      })
+
+      map.addLayer({
+        id: 'metros-line',
+        type: 'line',
+        source: 'metros',
+        minzoom: 4,
+        paint: {
+          'line-color': '#214f57',
+          'line-opacity': [
+            'case',
+            ['boolean', ['get', 'selected'], false],
+            0.92,
+            ['boolean', ['get', 'visited'], false],
+            0.7,
+            0.42,
+          ],
+          'line-width': placeLineWidth,
+        },
+      })
+
+      map.addLayer({
+        id: 'parks-fill',
+        type: 'fill',
+        source: 'parks',
+        minzoom: 4.5,
+        paint: {
+          'fill-color': '#2f7a57',
+          'fill-opacity': placeFillOpacity,
+        },
+      })
+
+      map.addLayer({
+        id: 'parks-line',
+        type: 'line',
+        source: 'parks',
+        minzoom: 4.5,
+        paint: {
+          'line-color': '#2f7a57',
+          'line-opacity': [
+            'case',
+            ['boolean', ['get', 'selected'], false],
+            0.95,
+            ['boolean', ['get', 'visited'], false],
+            0.75,
+            0.48,
+          ],
+          'line-width': placeLineWidth,
         },
       })
 
@@ -185,7 +311,24 @@ export function TravelMap({
         },
       })
 
+      map.on('click', 'metros-fill', (event) => {
+        const id = event.features?.[0]?.properties?.id
+        const metro = latestMapDataRef.current.metros.find((item) => item.id === id)
+        if (metro) latestMapDataRef.current.onSelectMetro?.(metro)
+      })
+
+      map.on('click', 'parks-fill', (event) => {
+        const id = event.features?.[0]?.properties?.id
+        const park = latestMapDataRef.current.parks.find((item) => item.id === id)
+        if (park) latestMapDataRef.current.onSelectPark?.(park)
+      })
+
       map.on('click', 'states-fill', (event) => {
+        const placeFeatures = map.queryRenderedFeatures(event.point, {
+          layers: ['metros-fill', 'parks-fill'],
+        })
+        if (placeFeatures.length) return
+
         const code = event.features?.[0]?.properties?.code
         if (code) latestMapDataRef.current.onSelectState(code)
       })
@@ -195,13 +338,21 @@ export function TravelMap({
         if (code) setHoveredStateCode(code)
       })
 
-      map.on('mouseenter', 'states-fill', () => {
-        map.getCanvas().style.cursor = 'pointer'
+      ;['states-fill', 'metros-fill', 'parks-fill'].forEach((layerId) => {
+        map.on('mouseenter', layerId, () => {
+          map.getCanvas().style.cursor = 'pointer'
+        })
       })
 
       map.on('mouseleave', 'states-fill', () => {
         setHoveredStateCode('')
         map.getCanvas().style.cursor = ''
+      })
+
+      ;['metros-fill', 'parks-fill'].forEach((layerId) => {
+        map.on('mouseleave', layerId, () => {
+          map.getCanvas().style.cursor = ''
+        })
       })
 
       fitDefaultBounds(map)
@@ -219,7 +370,9 @@ export function TravelMap({
     if (!map || !isMapReady) return
 
     map.getSource('states')?.setData(statesGeoJson)
-  }, [isMapReady, statesGeoJson])
+    map.getSource('metros')?.setData(metrosGeoJson)
+    map.getSource('parks')?.setData(parksGeoJson)
+  }, [isMapReady, metrosGeoJson, parksGeoJson, statesGeoJson])
 
   const resetView = () => {
     if (mapRef.current) fitDefaultBounds(mapRef.current)
@@ -254,7 +407,7 @@ export function TravelMap({
         </div>
       </div>
 
-      <p className="map-hint">Pinch or scroll to explore. Select a state to see its travel notes.</p>
+      <p className="map-hint">Pinch or scroll to explore. Zoom in to reveal cities and parks.</p>
 
       <div className="map-shell map-shell--maplibre">
         <div ref={mapContainerRef} className="maplibre-atlas" aria-label="Gesture-driven United States travel map" />

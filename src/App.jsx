@@ -9,6 +9,8 @@ import { PasswordGate } from './components/PasswordGate'
 import { states as defaultStates } from './data/states'
 import { cities } from './data/cities'
 import { parks } from './data/parks'
+import { metroAreas } from './data/metroAreas'
+import { parkBoundaries } from './data/parkBoundaries'
 import { evaluateAchievements } from './utils/achievements'
 import { getRegionalProgress, getStats } from './utils/stats'
 import { mergeStoredStates } from './utils/storage'
@@ -40,6 +42,7 @@ function App() {
   const [isEditorUnlocked, setIsEditorUnlocked] = useState(false)
   const [isCheckingEditorToken, setIsCheckingEditorToken] = useState(false)
   const [gateError, setGateError] = useState('')
+  const [selectedPlace, setSelectedPlace] = useState(null)
 
   useEffect(() => {
     const updateRoute = () => setIsEditorRoute(getIsEditorRoute())
@@ -80,7 +83,18 @@ function App() {
   const achievements = useMemo(() => evaluateAchievements(states), [states])
 
   const selectState = (code) => {
+    setSelectedPlace(null)
     setSelectedStateCode(code)
+  }
+
+  const selectMetro = (metro) => {
+    setSelectedPlace({ item: metro, type: 'metro' })
+    setSelectedStateCode(metro.stateCodes?.[0] ?? selectedStateCode)
+  }
+
+  const selectPark = (park) => {
+    setSelectedPlace({ item: park, type: 'park' })
+    setSelectedStateCode(park.stateCodes?.[0] ?? selectedStateCode)
   }
 
   const goPublic = () => {
@@ -214,12 +228,19 @@ function App() {
       <main>
         <div className="atlas-layout">
           <TravelMap
+            metros={metroAreas}
             onSelectState={selectState}
+            onSelectMetro={selectMetro}
+            onSelectPark={selectPark}
+            parks={parkBoundaries}
+            selectedPlace={selectedPlace}
             selectedStateCode={selectedStateCode}
             states={states}
           />
           <StateDetailPanel
+            selectedItem={selectedPlace}
             state={selectedState}
+            states={states}
           />
         </div>
 

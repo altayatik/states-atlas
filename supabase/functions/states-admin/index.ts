@@ -30,6 +30,8 @@ function getAllowedOrigins() {
     'https://altayatik.com',
     'http://localhost:5173',
     'http://localhost:5174',
+    'http://127.0.0.1:5173',
+    'http://127.0.0.1:5174',
   ])
 }
 
@@ -124,8 +126,12 @@ async function authorize(body: Record<string, unknown>) {
   const adminSecretPhrase = Deno.env.get('ADMIN_SECRET_PHRASE')
   const tokenSecret = Deno.env.get('ADMIN_TOKEN_SECRET')
 
-  if (!adminSecretPhrase || !tokenSecret) {
-    return { error: 'Admin auth is not configured.', status: 500 as const }
+  if (!adminSecretPhrase) {
+    return { error: 'ADMIN_SECRET_PHRASE is not configured', status: 500 as const }
+  }
+
+  if (!tokenSecret) {
+    return { error: 'ADMIN_TOKEN_SECRET is not configured', status: 500 as const }
   }
 
   if (typeof body.secretPhrase === 'string' && safeEqual(body.secretPhrase, adminSecretPhrase)) {
@@ -136,7 +142,7 @@ async function authorize(body: Record<string, unknown>) {
     return { adminToken: await createAdminToken(tokenSecret), ok: true as const }
   }
 
-  return { error: 'Unauthorized.', status: 401 as const }
+  return { error: 'Invalid secret phrase', status: 401 as const }
 }
 
 function validateStringArray(value: unknown, maxLength: number, allowed?: Set<string>) {
@@ -208,15 +214,18 @@ Deno.serve(async (request) => {
 
   const auth = await authorize(body)
   if (!auth.ok) {
-    return jsonResponse(request, auth.status, { error: auth.error })
+    return jsonResponse(request, auth.status, { error: auth.error, ok: false })
   }
 
   try {
     if (body.action === 'validate') {
+      if (!auth.adminToken) {
+        return jsonResponse(request, 500, { error: 'Unable to issue admin token.', ok: false })
+      }
+
       return jsonResponse(request, 200, {
         adminToken: auth.adminToken,
         ok: true,
-        success: true,
       })
     }
 
@@ -238,6 +247,7 @@ Deno.serve(async (request) => {
       return jsonResponse(request, 200, {
         adminToken: auth.adminToken,
         entry: data,
+        ok: true,
       })
     }
 
@@ -259,13 +269,14 @@ Deno.serve(async (request) => {
       return jsonResponse(request, 200, {
         adminToken: auth.adminToken,
         deleted: data,
+        ok: true,
         success: true,
       })
     }
 
-    return jsonResponse(request, 400, { error: 'Unsupported action.' })
+    return jsonResponse(request, 400, { error: 'Unsupported action.', ok: false })
   } catch (error) {
     console.error('states-admin unexpected error', error instanceof Error ? error.message : 'Unknown error')
-    return jsonResponse(request, 500, { error: 'Unexpected server error.' })
+    return jsonResponse(request, 500, { error: 'Unexpected server error.', ok: false })
   }
 })

@@ -36,7 +36,7 @@ The current editor route is deployed inside the same app at `/states/#/edit`. To
 
 The public header includes a small `Edit atlas` link to `/states/#/edit`. The editor is still protected by the Supabase secret phrase gate.
 
-The public `/states/` page is intentionally simple: header, compact stats, state-level map, selected state details, and achievements. City/metro outlines, national park outlines, and their map labels are temporarily disabled until the map layer design is cleaned up.
+The public `/states/` page is intentionally simple: header, compact stats, central map, selected detail panel, and achievements. City/metro and national park outlines are zoom-dependent supporting layers; they are hidden at the default view, appear only after zooming in, and do not use persistent text labels.
 
 ## Supabase Setup
 
@@ -200,10 +200,12 @@ The function expects:
 Copy `.env.example` to `.env.local` locally:
 
 ```bash
-VITE_SUPABASE_URL=
-VITE_SUPABASE_ANON_KEY=
+VITE_SUPABASE_URL=https://YOUR_PROJECT_REF.supabase.co
+VITE_SUPABASE_ANON_KEY=your_publishable_or_anon_key
 VITE_DEV_EDITOR_PHRASE=
 ```
+
+Vite bakes `VITE_*` variables into the static build. If `VITE_SUPABASE_URL` or `VITE_SUPABASE_ANON_KEY` is missing before `npm run build` or `npm run deploy`, the deployed editor cannot call `states-admin` and will show: `Editor unlock is not configured yet. Check the Supabase function and secrets.`
 
 If Supabase env vars are missing, the app uses localStorage for atlas entries. The editor does not unlock automatically. For local development only, set `VITE_DEV_EDITOR_PHRASE` in `.env.local` to enable a local editor token. Do not set that variable for production.
 
@@ -211,7 +213,7 @@ If Supabase env vars exist, public reads come from Supabase and writes go throug
 
 The editor uses a dropdown-first workflow: choose one state and edit that state inline. Changes autosave when closing the editor form, switching to another state, or returning to the public atlas. City and national park selections are stored as arrays in `cities_visited` and `parks_visited`; the frontend maps those to `citiesVisited` and `parksVisited`.
 
-City and national park selections are still editable and shown textually in the selected state detail panel. They are not rendered as public map outlines in the current simplified map. Existing city/park shapes are simplified visual approximations, not official boundaries. Alaska and Hawaii are represented as atlas-style clickable inset buttons so they remain clean, selectable, and status-colored without distorted geometry.
+City and national park selections are editable and shown textually in the selected state detail panel. Existing city/park shapes are simplified visual approximations, not official boundaries. Their public map outlines are subtle zoom-only layers, and clicked outlines update the selected detail panel without adding label clutter. Alaska and Hawaii are represented as atlas-style clickable inset buttons so they remain clean, selectable, and status-colored without distorted geometry.
 
 ## Security Model
 
@@ -235,9 +237,10 @@ NOTIFY pgrst, 'reload schema';
 
 If protected writes return `401`, the admin token may have expired or the phrase may be incorrect. The frontend clears failed tokens and asks for the phrase again.
 
-If the editor unlock route returns the configuration message, confirm the `states-admin` function is deployed and the Supabase secrets are set, then redeploy:
+If the editor unlock route returns the configuration message, confirm the `states-admin` function is deployed, the Supabase secrets are set, and `.env.local` contains `VITE_SUPABASE_URL` plus `VITE_SUPABASE_ANON_KEY` before rebuilding the frontend. Then redeploy:
 
 ```bash
 npx supabase secrets set ADMIN_SECRET_PHRASE="your-private-phrase"
 npx supabase functions deploy states-admin --use-api --no-verify-jwt
+npm run deploy
 ```

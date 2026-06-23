@@ -11,16 +11,15 @@
 - Editor changes autosave when closing the form, switching states, or returning to the public atlas.
 - The full public state list was removed from normal page flow.
 - Recent/latest memories were removed from the public page.
-- City/metro outlines, national park outlines, and all city/park map labels are temporarily disabled on the public map.
-- Public map layer toggles were removed; the map currently shows state status only.
+- City/metro and national park map layers were restored as subtle zoom-dependent outlines.
+- City/park labels and public map layer toggles were removed, keeping the default map uncluttered.
 - Alaska and Hawaii are atlas-style clickable insets instead of distorted map geometry.
 
 ## Remaining
 
 - Exact `/states-edit/` is not deployed yet. The current editor URL is `/states/#/edit`; a separate `/states-edit/` Pages deployment can be added later if desired.
 - The MapLibre bundle is large for a small personal site. A future pass can lazy-load the map route or split vendor chunks.
-- City and national park map outlines are temporarily disabled until the map layer design is cleaned up.
-- Future enhancement: reintroduce city/park layers with proper zoom-dependent styling and label behavior.
-- Existing metro and park outline data are simplified visual footprints, not official/legal boundaries. They should be replaced later with Census TIGER/Line Urban Area data and official NPS boundary data if those layers return.
+- Existing metro and park outline data are simplified visual footprints, not official/legal boundaries. They should be replaced later with Census TIGER/Line Urban Area data and official NPS boundary data if accuracy becomes a priority.
+- City/park outlines are intentionally subtle and zoom-dependent. Persistent labels remain disabled to avoid overlap; selected places are described in the detail panel instead.
 - Alaska and Hawaii are represented as clickable inset controls rather than full geographic placement.
 - Long badge/city/park lists are functional and mobile-safe, but could be made more elegant with a custom compact picker later.
