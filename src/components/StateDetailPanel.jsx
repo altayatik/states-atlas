@@ -12,8 +12,12 @@ export function StateDetailPanel({ state, cities, parks, selectedMapItem, showEd
     )
   }
 
-  const stateCities = cities.filter((city) => city.stateCode === state.code || state.citiesVisited.includes(city.name))
-  const stateParks = parks.filter((park) => park.states.includes(state.code) || state.parksVisited.includes(park.name))
+  const stateCityNames = state.citiesVisited.length
+    ? state.citiesVisited
+    : cities.filter((city) => city.stateCode === state.code).map((city) => city.name)
+  const stateParkNames = state.parksVisited.length
+    ? state.parksVisited
+    : parks.filter((park) => park.states.includes(state.code)).map((park) => park.name)
 
   if (selectedMapItem?.type === 'metro') {
     return (
@@ -131,14 +135,14 @@ export function StateDetailPanel({ state, cities, parks, selectedMapItem, showEd
           <MapPin size={17} aria-hidden="true" />
           Cities
         </h3>
-        <p>{formatList(stateCities.map((city) => city.name))}</p>
+        <p>{formatList(stateCityNames)}</p>
       </div>
       <div className="mini-list">
         <h3>
           <Mountain size={17} aria-hidden="true" />
           National parks
         </h3>
-        <p>{formatList(stateParks.map((park) => park.name))}</p>
+        <p>{formatList(stateParkNames)}</p>
       </div>
     </aside>
   )

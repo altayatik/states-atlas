@@ -1,23 +1,22 @@
 import { useMemo, useState } from 'react'
 import { Edit3, Search } from 'lucide-react'
-import { STATUSES, STATUS_LABELS } from '../data/states'
 import { formatStatus } from '../utils/formatters'
 
 export function AtlasEditor({ states, onBack, onEdit }) {
   const [query, setQuery] = useState('')
-  const [statusFilter, setStatusFilter] = useState('all')
+  const [selectedCode, setSelectedCode] = useState('')
 
   const filteredStates = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase()
 
     return states.filter((state) => {
-      const matchesQuery = !normalizedQuery
+      return !normalizedQuery
         || state.name.toLowerCase().includes(normalizedQuery)
         || state.code.toLowerCase().includes(normalizedQuery)
-      const matchesStatus = statusFilter === 'all' || state.status === statusFilter
-      return matchesQuery && matchesStatus
     })
-  }, [query, states, statusFilter])
+  }, [query, states])
+
+  const selectedState = states.find((state) => state.code === selectedCode)
 
   return (
     <main className="editor-page">
@@ -44,54 +43,63 @@ export function AtlasEditor({ states, onBack, onEdit }) {
           />
         </label>
         <label>
-          <span className="sr-only">Filter by status</span>
-          <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}>
-            <option value="all">All statuses</option>
-            {STATUSES.map((status) => (
-              <option key={status} value={status}>{STATUS_LABELS[status]}</option>
+          Choose a state to edit
+          <select value={selectedCode} onChange={(event) => setSelectedCode(event.target.value)}>
+            <option value="">Choose a state</option>
+            {filteredStates.map((state) => (
+              <option key={state.code} value={state.code}>
+                {state.name} — {formatStatus(state.status)}
+              </option>
             ))}
           </select>
         </label>
       </section>
 
-      <section className="editor-state-grid" aria-label="State editor list">
-        {filteredStates.map((state) => (
-          <article className="editor-state-card" key={state.code}>
-            <div className="editor-state-card__main">
-              <span>{state.code}</span>
-              <div>
-                <h2>{state.name}</h2>
-                <p>{formatStatus(state.status)}</p>
-              </div>
+      <section className="editor-select-panel" aria-label="Selected state editor">
+        {selectedState ? (
+          <article className="editor-selected-card">
+            <div>
+              <p className="eyebrow">{selectedState.code}</p>
+              <h2>{selectedState.name}</h2>
+              <p>{formatStatus(selectedState.status)}</p>
             </div>
-            <dl>
+            <dl className="editor-summary-row">
               <div>
                 <dt>Year</dt>
-                <dd>{state.firstVisitedYear || '-'}</dd>
+                <dd>{selectedState.firstVisitedYear || '-'}</dd>
               </div>
               <div>
                 <dt>Vibe</dt>
-                <dd>{state.vibeRating || '-'}/5</dd>
+                <dd>{selectedState.vibeRating || '-'}/5</dd>
               </div>
               <div>
                 <dt>Mention</dt>
-                <dd>{state.honorableMention ? 'Yes' : 'No'}</dd>
+                <dd>{selectedState.honorableMention ? 'Yes' : 'No'}</dd>
               </div>
               <div>
                 <dt>Cities</dt>
-                <dd>{state.citiesVisited.length}</dd>
+                <dd>{selectedState.citiesVisited.length}</dd>
               </div>
               <div>
                 <dt>Parks</dt>
-                <dd>{state.parksVisited.length}</dd>
+                <dd>{selectedState.parksVisited.length}</dd>
+              </div>
+              <div>
+                <dt>Last updated</dt>
+                <dd>{selectedState.updatedAt ? new Date(selectedState.updatedAt).toLocaleDateString() : '-'}</dd>
               </div>
             </dl>
-            <button className="button button--secondary" type="button" onClick={() => onEdit(state.code)}>
+            <button className="button" type="button" onClick={() => onEdit(selectedState.code)}>
               <Edit3 size={16} aria-hidden="true" />
-              Edit
+              Edit selected state
             </button>
           </article>
-        ))}
+        ) : (
+          <div className="editor-empty-state">
+            <h2>Choose a state to start editing.</h2>
+            <p>Search or open the dropdown, then edit one atlas entry at a time.</p>
+          </div>
+        )}
       </section>
     </main>
   )

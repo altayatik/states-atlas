@@ -34,6 +34,8 @@ The source repo is `altayatik/states-atlas`; the GitHub Pages deployment repo is
 
 The current editor route is deployed inside the same app at `/states/#/edit`. To deploy the preferred exact `/states-edit/` URL later without changing this app's public base, create a separate Pages deployment for that path, build with a `/states-edit/` base, and point it at the same source code/editor route.
 
+The public header includes a small `Edit atlas` link to `/states/#/edit`. The editor is still protected by the Supabase secret phrase gate.
+
 ## Supabase Setup
 
 Run the SQL in:
@@ -204,6 +206,10 @@ If these are missing, the app uses localStorage fallback. If they exist, reads c
 
 The public `/states/` page is read-only. The editor at `/states/#/edit` gates editing behind the secret phrase and stores only the returned admin token in `sessionStorage`.
 
+The editor uses a dropdown-first workflow: choose one state, edit that state, then save. City and national park selections are stored as arrays in `cities_visited` and `parks_visited`; the frontend maps those to `citiesVisited` and `parksVisited`.
+
+Map labels are automatic. City and park labels are hidden at the default view and appear on selection, hover, or higher zoom. Alaska and Hawaii are represented as simplified clickable inset buttons so they remain clean and selectable without distorted geometry.
+
 ## Security Model
 
 - Public visitors can read atlas data.
@@ -225,3 +231,10 @@ NOTIFY pgrst, 'reload schema';
 ```
 
 If protected writes return `401`, the admin token may have expired or the phrase may be incorrect. The frontend clears failed tokens and asks for the phrase again.
+
+If the editor unlock route returns the configuration message, confirm the `states-admin` function is deployed and the Supabase secrets are set, then redeploy:
+
+```bash
+npx supabase secrets set ADMIN_SECRET_PHRASE="your-private-phrase"
+npx supabase functions deploy states-admin --use-api --no-verify-jwt
+```

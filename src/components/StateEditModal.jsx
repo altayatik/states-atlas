@@ -1,9 +1,15 @@
-import { useEffect, useId, useState } from 'react'
+import { useEffect, useId, useMemo, useState } from 'react'
 import { X } from 'lucide-react'
 import { BADGE_LABELS, STATUSES, STATUS_LABELS } from '../data/states'
 
+function uniqueList(items) {
+  return [...new Set(items.map((item) => item.trim()).filter(Boolean))]
+}
+
 export function StateEditModal({
+  cityOptions = [],
   isOpen,
+  parkOptions = [],
   state,
   states,
   saveError,
@@ -13,6 +19,8 @@ export function StateEditModal({
 }) {
   const titleId = useId()
   const [draft, setDraft] = useState(state)
+  const [customCity, setCustomCity] = useState('')
+  const [customPark, setCustomPark] = useState('')
 
   useEffect(() => {
     setDraft(state)
@@ -28,6 +36,15 @@ export function StateEditModal({
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
   }, [isOpen, onCancel])
+
+  const stateCityOptions = useMemo(
+    () => cityOptions.filter((city) => city.stateCode === draft?.code),
+    [cityOptions, draft?.code],
+  )
+  const stateParkOptions = useMemo(
+    () => parkOptions.filter((park) => park.states.includes(draft?.code)),
+    [draft?.code, parkOptions],
+  )
 
   if (!isOpen || !draft) return null
 
@@ -47,11 +64,33 @@ export function StateEditModal({
     })
   }
 
-  const parseList = (value) =>
-    value
-      .split(',')
-      .map((item) => item.trim())
-      .filter(Boolean)
+  const toggleListItem = (field, value) => {
+    setDraft((current) => {
+      const currentList = current[field] ?? []
+      const nextList = currentList.includes(value)
+        ? currentList.filter((item) => item !== value)
+        : uniqueList([...currentList, value])
+      return { ...current, [field]: nextList }
+    })
+  }
+
+  const removeListItem = (field, value) => {
+    setDraft((current) => ({
+      ...current,
+      [field]: (current[field] ?? []).filter((item) => item !== value),
+    }))
+  }
+
+  const addCustomItem = (field, value, reset) => {
+    const trimmed = value.trim()
+    if (!trimmed) return
+
+    setDraft((current) => ({
+      ...current,
+      [field]: uniqueList([...(current[field] ?? []), trimmed]),
+    }))
+    reset('')
+  }
 
   return (
     <div className="modal-backdrop" role="presentation">
@@ -165,21 +204,94 @@ export function StateEditModal({
             Honorable mention
           </label>
 
-          <div className="form-grid">
-            <label>
-              Cities visited
-              <input
-                value={draft.citiesVisited.join(', ')}
-                onChange={(event) => updateField('citiesVisited', parseList(event.target.value))}
-              />
-            </label>
-            <label>
-              Parks visited
-              <input
-                value={draft.parksVisited.join(', ')}
-                onChange={(event) => updateField('parksVisited', parseList(event.target.value))}
-              />
-            </label>
+          <div className="form-grid form-grid--wide">
+            <fieldset className="multi-select-field">
+              <legend>Cities visited</legend>
+              <div className="chip-row" aria-label="Selected cities">
+                {draft.citiesVisited.length ? (
+                  draft.citiesVisited.map((city) => (
+                    <span className="edit-chip" key={city}>
+                      {city}
+                      <button type="button" onClick={() => removeListItem('citiesVisited', city)}>
+                        Remove
+                      </button>
+                    </span>
+                  ))
+                ) : (
+                  <span className="empty-chip">No cities selected</span>
+                )}
+              </div>
+              <div className="multi-check-list">
+                {stateCityOptions.map((city) => (
+                  <label key={city.id}>
+                    <input
+                      checked={draft.citiesVisited.includes(city.name)}
+                      type="checkbox"
+                      onChange={() => toggleListItem('citiesVisited', city.name)}
+                    />
+                    {city.name}
+                  </label>
+                ))}
+              </div>
+              <div className="custom-add-row">
+                <input
+                  placeholder="Add a custom city"
+                  value={customCity}
+                  onChange={(event) => setCustomCity(event.target.value)}
+                />
+                <button
+                  className="button button--secondary"
+                  type="button"
+                  onClick={() => addCustomItem('citiesVisited', customCity, setCustomCity)}
+                >
+                  Add
+                </button>
+              </div>
+            </fieldset>
+
+            <fieldset className="multi-select-field">
+              <legend>National parks visited</legend>
+              <div className="chip-row" aria-label="Selected parks">
+                {draft.parksVisited.length ? (
+                  draft.parksVisited.map((park) => (
+                    <span className="edit-chip" key={park}>
+                      {park}
+                      <button type="button" onClick={() => removeListItem('parksVisited', park)}>
+                        Remove
+                      </button>
+                    </span>
+                  ))
+                ) : (
+                  <span className="empty-chip">No parks selected</span>
+                )}
+              </div>
+              <div className="multi-check-list">
+                {stateParkOptions.map((park) => (
+                  <label key={park.id}>
+                    <input
+                      checked={draft.parksVisited.includes(park.name)}
+                      type="checkbox"
+                      onChange={() => toggleListItem('parksVisited', park.name)}
+                    />
+                    {park.name}
+                  </label>
+                ))}
+              </div>
+              <div className="custom-add-row">
+                <input
+                  placeholder="Add a custom park"
+                  value={customPark}
+                  onChange={(event) => setCustomPark(event.target.value)}
+                />
+                <button
+                  className="button button--secondary"
+                  type="button"
+                  onClick={() => addCustomItem('parksVisited', customPark, setCustomPark)}
+                >
+                  Add
+                </button>
+              </div>
+            </fieldset>
           </div>
 
           {saveError && <p className="form-error" role="alert">{saveError}</p>}

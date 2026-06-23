@@ -116,7 +116,7 @@ export async function upsertStateTravelEntry(entry, auth = {}) {
 
 export async function validateAdminSecret(secretPhrase) {
   if (!isSupabaseConfigured) {
-    return { adminToken: '', success: Boolean(secretPhrase?.trim()) }
+    return { adminToken: '', ok: Boolean(secretPhrase?.trim()) }
   }
 
   const response = await fetch(`${SUPABASE_URL}/functions/v1/states-admin`, {
@@ -131,7 +131,7 @@ export async function validateAdminSecret(secretPhrase) {
 
   return {
     adminToken: payload.adminToken,
-    success: Boolean(payload.success),
+    ok: Boolean(payload.ok ?? payload.success),
   }
 }
 

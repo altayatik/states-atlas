@@ -6,10 +6,16 @@ export function isVisited(state) {
   return VISITED_STATUSES.has(state.status)
 }
 
-export function getStats(states, cities, parks) {
+function countUniqueLoggedItems(states, field) {
+  return new Set(states.flatMap((state) => state[field] ?? []).filter(Boolean)).size
+}
+
+export function getStats(states) {
   const visited = states.filter(isVisited)
   const stayed = states.filter((state) => ['stayed_overnight', 'lived_there', 'favorite'].includes(state.status))
   const favorites = states.filter((state) => state.status === 'favorite')
+  const citiesLogged = countUniqueLoggedItems(states, 'citiesVisited')
+  const parksMarked = countUniqueLoggedItems(states, 'parksVisited')
   const latestUpdated = states
     .filter((state) => state.updatedAt)
     .sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt))[0]
@@ -19,8 +25,8 @@ export function getStats(states, cities, parks) {
     statesTotal: states.length,
     statesStayed: stayed.length,
     favorites: favorites.length,
-    citiesLogged: cities.length,
-    parksMarked: parks.filter((park) => park.visited).length,
+    citiesLogged,
+    parksMarked,
     completionPercent: (visited.length / states.length) * 100,
     latestUpdated,
   }

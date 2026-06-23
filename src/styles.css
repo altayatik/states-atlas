@@ -154,6 +154,12 @@ textarea:focus-visible,
   padding: 0 18px;
 }
 
+.button--small {
+  min-height: 40px;
+  padding: 0 14px;
+  font-size: 0.9rem;
+}
+
 .button--secondary {
   border: 1px solid rgba(132, 54, 34, 0.25);
   background: #fff6e3;
@@ -384,6 +390,47 @@ textarea:focus-visible,
 .maplibre-atlas {
   width: 100%;
   height: 100%;
+}
+
+.map-insets {
+  position: absolute;
+  right: 14px;
+  bottom: 14px;
+  z-index: 2;
+  display: flex;
+  gap: 8px;
+}
+
+.map-inset {
+  display: grid;
+  min-width: 72px;
+  min-height: 58px;
+  padding: 8px 10px;
+  border: 2px solid rgba(45, 36, 30, 0.3);
+  border-radius: 14px;
+  background:
+    linear-gradient(rgba(255, 248, 230, 0.64), rgba(255, 248, 230, 0.64)),
+    var(--state-color);
+  color: #2d241e;
+  box-shadow: 0 10px 18px rgba(45, 36, 30, 0.14);
+}
+
+.map-inset.is-selected {
+  border-color: #2d241e;
+  box-shadow:
+    0 0 0 3px rgba(242, 191, 69, 0.6),
+    0 10px 18px rgba(45, 36, 30, 0.18);
+}
+
+.map-inset span {
+  font-size: 1.1rem;
+  font-weight: 950;
+  line-height: 1;
+}
+
+.map-inset small {
+  font-size: 0.72rem;
+  font-weight: 900;
 }
 
 .maplibre-atlas .maplibregl-canvas {
@@ -837,6 +884,10 @@ textarea:focus-visible,
   gap: 12px;
 }
 
+.form-grid--wide {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
 .range-value {
   color: #843622;
 }
@@ -852,6 +903,65 @@ textarea:focus-visible,
 .checkbox-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.multi-select-field {
+  display: grid;
+  gap: 10px;
+}
+
+.chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.edit-chip,
+.empty-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 100%;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: #fff6e3;
+  color: #4d3c30;
+  font-size: 0.84rem;
+  font-weight: 900;
+}
+
+.edit-chip button {
+  min-height: 0;
+  border: 0;
+  background: transparent;
+  color: #843622;
+  font-size: 0.72rem;
+  font-weight: 950;
+}
+
+.multi-check-list {
+  display: grid;
+  max-height: 170px;
+  overflow: auto;
+  gap: 6px;
+  padding: 8px;
+  border: 1px solid rgba(92, 68, 47, 0.16);
+  border-radius: 12px;
+  background: rgba(255, 253, 248, 0.78);
+}
+
+.multi-check-list label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 34px;
+  font-weight: 850;
+}
+
+.custom-add-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
   gap: 8px;
 }
 
@@ -883,7 +993,9 @@ textarea:focus-visible,
 .gate-card,
 .editor-header,
 .editor-tools,
-.editor-state-card {
+.editor-state-card,
+.editor-selected-card,
+.editor-empty-state {
   border: 1px solid rgba(92, 68, 47, 0.16);
   border-radius: 18px;
   background: rgba(255, 248, 230, 0.9);
@@ -990,6 +1102,51 @@ textarea:focus-visible,
   gap: 12px;
 }
 
+.editor-select-panel {
+  display: grid;
+}
+
+.editor-selected-card,
+.editor-empty-state {
+  display: grid;
+  gap: 16px;
+  padding: 18px;
+}
+
+.editor-selected-card h2,
+.editor-empty-state h2,
+.editor-selected-card p,
+.editor-empty-state p {
+  margin: 0;
+}
+
+.editor-selected-card h2,
+.editor-empty-state h2 {
+  color: #38291f;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: clamp(1.6rem, 4vw, 2.5rem);
+  letter-spacing: 0;
+}
+
+.editor-summary-row {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0;
+}
+
+.editor-summary-row dt {
+  color: #765b45;
+  font-size: 0.72rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.editor-summary-row dd {
+  margin: 0;
+  font-weight: 900;
+}
+
 .editor-state-card {
   display: grid;
   gap: 12px;
@@ -1092,6 +1249,7 @@ textarea:focus-visible,
   .memory-grid,
   .editor-tools,
   .editor-state-grid,
+  .editor-summary-row,
   .form-grid,
   .checkbox-grid {
     grid-template-columns: 1fr;
@@ -1133,6 +1291,17 @@ textarea:focus-visible,
   .map-shell--maplibre {
     height: min(65vh, 560px);
     min-height: 420px;
+  }
+
+  .map-insets {
+    right: 10px;
+    bottom: 10px;
+  }
+
+  .map-inset {
+    min-width: 58px;
+    min-height: 50px;
+    padding: 7px 8px;
   }
 
   .us-map {
@@ -1213,8 +1382,13 @@ textarea:focus-visible,
 
   .gate-actions .button,
   .editor-header .button,
-  .editor-state-card .button {
+  .editor-state-card .button,
+  .editor-selected-card .button {
     width: 100%;
+  }
+
+  .custom-add-row {
+    grid-template-columns: 1fr;
   }
 }
 

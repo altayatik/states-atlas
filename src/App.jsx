@@ -6,7 +6,6 @@ import { StateDetailPanel } from './components/StateDetailPanel'
 import { StateEditModal } from './components/StateEditModal'
 import { Achievements } from './components/Achievements'
 import { LatestMemories } from './components/LatestMemories'
-import { StateList } from './components/StateList'
 import { AtlasEditor } from './components/AtlasEditor'
 import { PasswordGate } from './components/PasswordGate'
 import { states as defaultStates } from './data/states'
@@ -82,7 +81,7 @@ function App() {
   }, [])
 
   const selectedState = states.find((state) => state.code === selectedStateCode)
-  const stats = useMemo(() => getStats(states, cities, parks), [states])
+  const stats = useMemo(() => getStats(states), [states])
   const regions = useMemo(() => getRegionalProgress(states), [states])
   const achievements = useMemo(() => evaluateAchievements(states), [states])
 
@@ -145,7 +144,7 @@ function App() {
 
     try {
       const result = await validateAdminSecret(secretPhrase)
-      if (!result.success) {
+      if (!result.ok) {
         setGateError('That secret phrase doesn’t match. Try again.')
         return
       }
@@ -159,7 +158,7 @@ function App() {
       clearAdminToken()
       setGateError(error.status === 401
         ? 'That secret phrase doesn’t match. Try again.'
-        : error.message || 'Unable to unlock the editor.')
+        : 'Editor unlock is not configured yet. Check the Supabase function and secrets.')
     }
   }
 
@@ -177,11 +176,13 @@ function App() {
         {isLoadingEntries && <div className="sync-banner">Loading atlas entries...</div>}
         <AtlasEditor states={states} onBack={goPublic} onEdit={openEdit} />
         <StateEditModal
+          cityOptions={cities}
           isOpen={isEditOpen}
           onCancel={() => setIsEditOpen(false)}
           saveError={saveError}
           onSave={saveState}
           onStateChange={setSelectedStateCode}
+          parkOptions={parks}
           state={selectedState}
           states={states}
         />
@@ -223,14 +224,6 @@ function App() {
 
         <Achievements achievements={achievements} />
         <LatestMemories states={states} />
-        <StateList
-          collapsed
-          showEdit={false}
-          onEdit={openEdit}
-          onSelectState={selectState}
-          selectedStateCode={selectedStateCode}
-          states={states}
-        />
       </main>
     </div>
   )

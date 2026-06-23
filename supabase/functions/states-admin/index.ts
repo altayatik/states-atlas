@@ -27,6 +27,7 @@ function getAllowedOrigins() {
   const configured = Deno.env.get('ALLOWED_ORIGIN')
   return new Set([
     ...(configured ? configured.split(',').map((origin) => origin.trim()).filter(Boolean) : []),
+    'https://altayatik.com',
     'http://localhost:5173',
     'http://localhost:5174',
   ])
@@ -214,6 +215,7 @@ Deno.serve(async (request) => {
     if (body.action === 'validate') {
       return jsonResponse(request, 200, {
         adminToken: auth.adminToken,
+        ok: true,
         success: true,
       })
     }
