@@ -1,0 +1,171 @@
+import { useEffect, useMemo, useState } from 'react'
+import { AtlasHeader } from './components/AtlasHeader'
+import { StatsCards } from './components/StatsCards'
+import { TravelMap } from './components/TravelMap'
+import { StateDetailPanel } from './components/StateDetailPanel'
+import { StateEditModal } from './components/StateEditModal'
+import { Achievements } from './components/Achievements'
+import { LatestMemories } from './components/LatestMemories'
+import { StateList } from './components/StateList'
+import { states as defaultStates } from './data/states'
+import { cities } from './data/cities'
+import { parks } from './data/parks'
+import { metroAreas } from './data/metroAreas'
+import { parkBoundaries } from './data/parkBoundaries'
+import { evaluateAchievements } from './utils/achievements'
+import { getRegionalProgress, getStats } from './utils/stats'
+import { mergeStoredStates } from './utils/storage'
+import {
+  clearAdminToken,
+  fetchStateTravelEntries,
+  getStoredAdminToken,
+  isSupabaseConfigured,
+  storeAdminToken,
+  upsertStateTravelEntry,
+} from './services/stateTravelApi'
+import './styles.css'
+
+function App() {
+  const [states, setStates] = useState(defaultStates)
+  const [selectedStateCode, setSelectedStateCode] = useState('CA')
+  const [selectedMapItem, setSelectedMapItem] = useState(null)
+  const [isEditOpen, setIsEditOpen] = useState(false)
+  const [isLoadingEntries, setIsLoadingEntries] = useState(true)
+  const [saveError, setSaveError] = useState('')
+  const [hasAdminToken, setHasAdminToken] = useState(() => Boolean(getStoredAdminToken()))
+
+  useEffect(() => {
+    let isMounted = true
+
+    async function loadEntries() {
+      try {
+        const entries = await fetchStateTravelEntries()
+        if (isMounted) setStates(mergeStoredStates(defaultStates, entries))
+      } catch (error) {
+        console.warn('Unable to load Supabase entries. Showing static atlas data.', error)
+        if (isMounted) setStates(defaultStates)
+      } finally {
+        if (isMounted) setIsLoadingEntries(false)
+      }
+    }
+
+    loadEntries()
+
+    return () => {
+      isMounted = false
+    }
+  }, [])
+
+  const selectedState = states.find((state) => state.code === selectedStateCode)
+  const stats = useMemo(() => getStats(states, cities, parks), [states])
+  const regions = useMemo(() => getRegionalProgress(states), [states])
+  const achievements = useMemo(() => evaluateAchievements(states), [states])
+
+  const selectState = (code) => {
+    setSelectedStateCode(code)
+    setSelectedMapItem(null)
+  }
+
+  const openEdit = (code = selectedStateCode) => {
+    setSaveError('')
+    setSelectedStateCode(code)
+    setIsEditOpen(true)
+  }
+
+  const refreshEntries = async () => {
+    const entries = await fetchStateTravelEntries()
+    setStates(mergeStoredStates(defaultStates, entries))
+  }
+
+  const saveState = async (draft, auth = {}) => {
+    setSaveError('')
+
+    try {
+      const result = await upsertStateTravelEntry(draft, {
+        adminToken: getStoredAdminToken(),
+        secretPhrase: auth.secretPhrase,
+      })
+
+      if (result.adminToken) {
+        storeAdminToken(result.adminToken)
+        setHasAdminToken(true)
+      }
+
+      if (isSupabaseConfigured) {
+        await refreshEntries()
+      } else {
+        setStates((current) => current.map((state) => (state.code === draft.code ? draft : state)))
+      }
+
+      setSelectedStateCode(draft.code)
+      setIsEditOpen(false)
+    } catch (error) {
+      if (error.status === 401) {
+        clearAdminToken()
+        setHasAdminToken(false)
+        setSaveError('That secret phrase doesn’t match. Try again.')
+        return
+      }
+
+      setSaveError(error.message || 'Unable to save this atlas entry.')
+    }
+  }
+
+  return (
+    <div className="app-shell">
+      <AtlasHeader onEdit={() => openEdit()} />
+      {isLoadingEntries && <div className="sync-banner">Loading atlas entries...</div>}
+      <StatsCards regions={regions} stats={stats} />
+
+      <main>
+        <div className="atlas-layout">
+          <TravelMap
+            metros={metroAreas}
+            onSelectMetro={(metro) => {
+              setSelectedMapItem({ ...metro, type: 'metro' })
+              setSelectedStateCode(metro.stateCodes[0])
+            }}
+            onSelectPark={(park) => {
+              setSelectedMapItem({ ...park, type: 'park' })
+              setSelectedStateCode(park.stateCodes[0])
+            }}
+            onSelectState={selectState}
+            parks={parkBoundaries}
+            selectedMapItem={selectedMapItem}
+            selectedStateCode={selectedStateCode}
+            states={states}
+          />
+          <StateDetailPanel
+            cities={cities}
+            onEdit={() => openEdit()}
+            parks={parks}
+            selectedMapItem={selectedMapItem}
+            state={selectedState}
+          />
+        </div>
+
+        <Achievements achievements={achievements} />
+        <LatestMemories states={states} />
+        <StateList
+          onEdit={openEdit}
+          onSelectState={selectState}
+          selectedStateCode={selectedStateCode}
+          states={states}
+        />
+      </main>
+
+      <StateEditModal
+        isOpen={isEditOpen}
+        onCancel={() => setIsEditOpen(false)}
+        requiresSecret={isSupabaseConfigured && !hasAdminToken}
+        saveError={saveError}
+        onSave={saveState}
+        onStateChange={setSelectedStateCode}
+        state={selectedState}
+        states={states}
+      />
+    </div>
+  )
+}
+
+export default App

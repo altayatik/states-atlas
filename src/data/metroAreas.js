@@ -1,0 +1,173 @@
+// Simplified visual metro footprints for the MVP; these can later be replaced with Census TIGER/Line Urban Area data.
+export const metroAreas = [
+  {
+    id: 'sf-bay-area',
+    name: 'San Francisco Bay Area',
+    stateCodes: ['CA'],
+    status: 'visited',
+    favoriteMemory: 'Golden Gate sunset and fog rolling over the hills.',
+    geometry: {
+      type: 'Polygon',
+      coordinates: [[
+        [-122.7, 37.25],
+        [-121.75, 37.22],
+        [-121.55, 38.14],
+        [-122.45, 38.28],
+        [-122.7, 37.25],
+      ]],
+    },
+  },
+  {
+    id: 'los-angeles',
+    name: 'Los Angeles',
+    stateCodes: ['CA'],
+    status: 'visited',
+    favoriteMemory: 'Sunset colors over the hills.',
+    geometry: {
+      type: 'Polygon',
+      coordinates: [[
+        [-118.95, 33.55],
+        [-117.55, 33.6],
+        [-117.5, 34.45],
+        [-118.75, 34.5],
+        [-118.95, 33.55],
+      ]],
+    },
+  },
+  {
+    id: 'las-vegas',
+    name: 'Las Vegas',
+    stateCodes: ['NV'],
+    status: 'visited',
+    favoriteMemory: 'A neon desert arrival.',
+    geometry: {
+      type: 'Polygon',
+      coordinates: [[
+        [-115.5, 35.92],
+        [-114.9, 35.96],
+        [-114.88, 36.4],
+        [-115.48, 36.42],
+        [-115.5, 35.92],
+      ]],
+    },
+  },
+  {
+    id: 'denver',
+    name: 'Denver',
+    stateCodes: ['CO'],
+    status: 'visited',
+    favoriteMemory: 'Mountains at the edge of every plan.',
+    geometry: {
+      type: 'Polygon',
+      coordinates: [[
+        [-105.25, 39.48],
+        [-104.65, 39.48],
+        [-104.62, 40.05],
+        [-105.28, 40.08],
+        [-105.25, 39.48],
+      ]],
+    },
+  },
+  {
+    id: 'chicago',
+    name: 'Chicago',
+    stateCodes: ['IL'],
+    status: 'visited',
+    favoriteMemory: 'Lake wind and skyline walks.',
+    geometry: {
+      type: 'Polygon',
+      coordinates: [[
+        [-88.15, 41.45],
+        [-87.35, 41.52],
+        [-87.35, 42.15],
+        [-88.2, 42.18],
+        [-88.15, 41.45],
+      ]],
+    },
+  },
+  {
+    id: 'new-york-city',
+    name: 'New York City',
+    stateCodes: ['NY', 'NJ'],
+    status: 'visited',
+    favoriteMemory: 'Late trains and bright windows.',
+    geometry: {
+      type: 'Polygon',
+      coordinates: [[
+        [-74.35, 40.45],
+        [-73.62, 40.45],
+        [-73.62, 41.08],
+        [-74.35, 41.08],
+        [-74.35, 40.45],
+      ]],
+    },
+  },
+  {
+    id: 'boston',
+    name: 'Boston',
+    stateCodes: ['MA'],
+    status: 'visited',
+    favoriteMemory: 'Brick streets after rain.',
+    geometry: {
+      type: 'Polygon',
+      coordinates: [[
+        [-71.32, 42.18],
+        [-70.82, 42.18],
+        [-70.78, 42.58],
+        [-71.34, 42.6],
+        [-71.32, 42.18],
+      ]],
+    },
+  },
+  {
+    id: 'miami',
+    name: 'Miami',
+    stateCodes: ['FL'],
+    status: 'visited',
+    favoriteMemory: 'Ocean air and pastel afternoons.',
+    geometry: {
+      type: 'Polygon',
+      coordinates: [[
+        [-80.45, 25.45],
+        [-80.05, 25.45],
+        [-80.04, 26.05],
+        [-80.42, 26.08],
+        [-80.45, 25.45],
+      ]],
+    },
+  },
+  {
+    id: 'seattle',
+    name: 'Seattle',
+    stateCodes: ['WA'],
+    status: 'visited',
+    favoriteMemory: 'Ferry light under low clouds.',
+    geometry: {
+      type: 'Polygon',
+      coordinates: [[
+        [-122.58, 47.35],
+        [-122.05, 47.35],
+        [-122, 47.82],
+        [-122.58, 47.85],
+        [-122.58, 47.35],
+      ]],
+    },
+  },
+  {
+    id: 'portland',
+    name: 'Portland',
+    stateCodes: ['OR', 'WA'],
+    status: 'visited',
+    favoriteMemory: 'Rain, bookstores, and fir trees.',
+    geometry: {
+      type: 'Polygon',
+      coordinates: [[
+        [-122.92, 45.28],
+        [-122.38, 45.28],
+        [-122.34, 45.75],
+        [-122.92, 45.78],
+        [-122.92, 45.28],
+      ]],
+    },
+  },
+]
