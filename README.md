@@ -24,6 +24,7 @@ npm run deploy
 ```
 
 This deploys the built `dist` directory to GitHub Pages with the `/states/` base path.
+The source repo is `altayatik/states-atlas`; the GitHub Pages deployment repo is `altayatik/states` so the public URL resolves at `/states/`.
 
 ## Supabase Setup
 
