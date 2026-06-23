@@ -5,13 +5,15 @@
 - Public `/states/` no longer shows edit buttons, password fields, or admin controls.
 - Public `/states/` now has a small `Edit atlas` link to the protected editor route.
 - Editor controls moved to `/states/#/edit` behind a secret phrase gate.
-- The editor now uses a dropdown-first workflow instead of rendering 50 editable cards.
+- The editor now uses a dropdown-first inline workflow instead of search, modal steps, or 50 editable cards.
+- Editor unlock now requires a backend/admin-token response; arbitrary phrases no longer unlock the route.
 - City and park selections are explicit checklist/custom inputs and save to `cities_visited` and `parks_visited`.
+- Editor changes autosave when closing the form, switching states, or returning to the public atlas.
 - The full public state list was removed from normal page flow.
 - Recent/latest memories were removed from the public page.
 - City/metro outlines, national park outlines, and all city/park map labels are temporarily disabled on the public map.
 - Public map layer toggles were removed; the map currently shows state status only.
-- Alaska and Hawaii are simplified clickable insets instead of distorted map geometry.
+- Alaska and Hawaii are atlas-style clickable insets instead of distorted map geometry.
 
 ## Remaining
 
@@ -21,4 +23,4 @@
 - Future enhancement: reintroduce city/park layers with proper zoom-dependent styling and label behavior.
 - Existing metro and park outline data are simplified visual footprints, not official/legal boundaries. They should be replaced later with Census TIGER/Line Urban Area data and official NPS boundary data if those layers return.
 - Alaska and Hawaii are represented as clickable inset controls rather than full geographic placement.
-- The edit modal is functional, but long badge/city/park lists could use a more refined compact mobile layout in a later UI pass.
+- Long badge/city/park lists are functional and mobile-safe, but could be made more elegant with a custom compact picker later.

@@ -202,15 +202,16 @@ Copy `.env.example` to `.env.local` locally:
 ```bash
 VITE_SUPABASE_URL=
 VITE_SUPABASE_ANON_KEY=
+VITE_DEV_EDITOR_PHRASE=
 ```
 
-If these are missing, the app uses localStorage fallback. If they exist, reads come from Supabase and writes go through the `states-admin` Edge Function.
+If Supabase env vars are missing, the app uses localStorage for atlas entries. The editor does not unlock automatically. For local development only, set `VITE_DEV_EDITOR_PHRASE` in `.env.local` to enable a local editor token. Do not set that variable for production.
 
-The public `/states/` page is read-only. The editor at `/states/#/edit` gates editing behind the secret phrase and stores only the returned admin token in `sessionStorage`.
+If Supabase env vars exist, public reads come from Supabase and writes go through the `states-admin` Edge Function. The public `/states/` page is read-only. The editor at `/states/#/edit` gates editing behind the secret phrase and unlocks only when the function returns `{ ok: true, adminToken: "..." }`. The frontend stores only the returned admin token in `sessionStorage` under `statesAtlasAdminToken`.
 
-The editor uses a dropdown-first workflow: choose one state, edit that state, then save. City and national park selections are stored as arrays in `cities_visited` and `parks_visited`; the frontend maps those to `citiesVisited` and `parksVisited`.
+The editor uses a dropdown-first workflow: choose one state and edit that state inline. Changes autosave when closing the editor form, switching to another state, or returning to the public atlas. City and national park selections are stored as arrays in `cities_visited` and `parks_visited`; the frontend maps those to `citiesVisited` and `parksVisited`.
 
-City and national park selections are still editable and shown textually in the selected state detail panel. They are not rendered as public map outlines in the current simplified map. Alaska and Hawaii are represented as simplified clickable inset buttons so they remain clean and selectable without distorted geometry.
+City and national park selections are still editable and shown textually in the selected state detail panel. They are not rendered as public map outlines in the current simplified map. Existing city/park shapes are simplified visual approximations, not official boundaries. Alaska and Hawaii are represented as atlas-style clickable inset buttons so they remain clean, selectable, and status-colored without distorted geometry.
 
 ## Security Model
 

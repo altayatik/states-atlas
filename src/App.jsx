@@ -3,7 +3,6 @@ import { AtlasHeader } from './components/AtlasHeader'
 import { StatsCards } from './components/StatsCards'
 import { TravelMap } from './components/TravelMap'
 import { StateDetailPanel } from './components/StateDetailPanel'
-import { StateEditModal } from './components/StateEditModal'
 import { Achievements } from './components/Achievements'
 import { AtlasEditor } from './components/AtlasEditor'
 import { PasswordGate } from './components/PasswordGate'
@@ -20,7 +19,7 @@ import {
   isSupabaseConfigured,
   storeAdminToken,
   upsertStateTravelEntry,
-  validateAdminSecret,
+  validateEditorAccess,
 } from './services/stateTravelApi'
 import './styles.css'
 
@@ -36,11 +35,10 @@ function getIsEditorRoute() {
 function App() {
   const [states, setStates] = useState(defaultStates)
   const [selectedStateCode, setSelectedStateCode] = useState('CA')
-  const [isEditOpen, setIsEditOpen] = useState(false)
   const [isLoadingEntries, setIsLoadingEntries] = useState(true)
-  const [saveError, setSaveError] = useState('')
   const [isEditorRoute, setIsEditorRoute] = useState(getIsEditorRoute)
-  const [isEditorUnlocked, setIsEditorUnlocked] = useState(() => Boolean(getStoredAdminToken()))
+  const [isEditorUnlocked, setIsEditorUnlocked] = useState(false)
+  const [isCheckingEditorToken, setIsCheckingEditorToken] = useState(false)
   const [gateError, setGateError] = useState('')
 
   useEffect(() => {
@@ -85,12 +83,6 @@ function App() {
     setSelectedStateCode(code)
   }
 
-  const openEdit = (code = selectedStateCode) => {
-    setSaveError('')
-    setSelectedStateCode(code)
-    setIsEditOpen(true)
-  }
-
   const goPublic = () => {
     window.location.href = '/states/'
   }
@@ -100,9 +92,7 @@ function App() {
     setStates(mergeStoredStates(defaultStates, entries))
   }
 
-  const saveState = async (draft) => {
-    setSaveError('')
-
+  const persistState = async (draft) => {
     try {
       const result = await upsertStateTravelEntry(draft, {
         adminToken: getStoredAdminToken(),
@@ -119,18 +109,15 @@ function App() {
       }
 
       setSelectedStateCode(draft.code)
-      setIsEditOpen(false)
+      return draft
     } catch (error) {
       if (error.status === 401) {
         clearAdminToken()
         setIsEditorUnlocked(false)
-        setIsEditOpen(false)
-        setSaveError('That secret phrase doesn’t match. Try again.')
         setGateError('That secret phrase doesn’t match. Try again.')
-        return
       }
 
-      setSaveError(error.message || 'Unable to save this atlas entry.')
+      throw error
     }
   }
 
@@ -138,15 +125,13 @@ function App() {
     setGateError('')
 
     try {
-      const result = await validateAdminSecret(secretPhrase)
-      if (!result.ok) {
-        setGateError('That secret phrase doesn’t match. Try again.')
+      const result = await validateEditorAccess({ secretPhrase })
+      if (!result.ok || !result.adminToken) {
+        setGateError(result.message || 'That secret phrase doesn’t match. Try again.')
         return
       }
 
-      if (result.adminToken) {
-        storeAdminToken(result.adminToken)
-      }
+      storeAdminToken(result.adminToken)
 
       setIsEditorUnlocked(true)
     } catch (error) {
@@ -155,6 +140,46 @@ function App() {
         ? 'That secret phrase doesn’t match. Try again.'
         : 'Editor unlock is not configured yet. Check the Supabase function and secrets.')
     }
+  }
+
+  useEffect(() => {
+    if (!isEditorRoute || isEditorUnlocked) return undefined
+
+    const token = getStoredAdminToken()
+    if (!token) return undefined
+
+    let isMounted = true
+    setIsCheckingEditorToken(true)
+
+    validateEditorAccess({ adminToken: token })
+      .then((result) => {
+        if (!isMounted) return
+        if (result.ok && result.adminToken) {
+          storeAdminToken(result.adminToken)
+          setIsEditorUnlocked(true)
+        } else {
+          clearAdminToken()
+        }
+      })
+      .catch(() => {
+        if (!isMounted) return
+        clearAdminToken()
+      })
+      .finally(() => {
+        if (isMounted) setIsCheckingEditorToken(false)
+      })
+
+    return () => {
+      isMounted = false
+    }
+  }, [isEditorRoute, isEditorUnlocked])
+
+  if (isEditorRoute && isCheckingEditorToken) {
+    return (
+      <div className="app-shell app-shell--editor">
+        <div className="sync-banner">Checking editor access...</div>
+      </div>
+    )
   }
 
   if (isEditorRoute && !isEditorUnlocked) {
@@ -169,16 +194,11 @@ function App() {
     return (
       <div className="app-shell app-shell--editor">
         {isLoadingEntries && <div className="sync-banner">Loading atlas entries...</div>}
-        <AtlasEditor states={states} onBack={goPublic} onEdit={openEdit} />
-        <StateEditModal
+        <AtlasEditor
           cityOptions={cities}
-          isOpen={isEditOpen}
-          onCancel={() => setIsEditOpen(false)}
-          saveError={saveError}
-          onSave={saveState}
-          onStateChange={setSelectedStateCode}
+          onBack={goPublic}
+          onSave={persistState}
           parkOptions={parks}
-          state={selectedState}
           states={states}
         />
       </div>

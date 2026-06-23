@@ -2,9 +2,16 @@ import { loadStoredStates, saveStoredStates } from '../utils/storage'
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL?.replace(/\/$/, '')
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY
-const ADMIN_TOKEN_KEY = 'states-atlas.admin-token.v1'
+const DEV_EDITOR_PHRASE = import.meta.env.VITE_DEV_EDITOR_PHRASE
+const ADMIN_TOKEN_KEY = 'statesAtlasAdminToken'
+const LEGACY_ADMIN_TOKEN_KEY = 'states-atlas.admin-token.v1'
 
 export const isSupabaseConfigured = Boolean(SUPABASE_URL && SUPABASE_ANON_KEY)
+
+function isLocalDevHost() {
+  if (typeof window === 'undefined') return false
+  return ['localhost', '127.0.0.1', '::1'].includes(window.location.hostname)
+}
 
 function getHeaders() {
   return {
@@ -60,7 +67,9 @@ async function readJsonResponse(response) {
 
 export function getStoredAdminToken() {
   if (typeof window === 'undefined') return ''
-  return window.sessionStorage.getItem(ADMIN_TOKEN_KEY) || ''
+  return window.sessionStorage.getItem(ADMIN_TOKEN_KEY)
+    || window.sessionStorage.getItem(LEGACY_ADMIN_TOKEN_KEY)
+    || ''
 }
 
 export function storeAdminToken(token) {
@@ -71,6 +80,7 @@ export function storeAdminToken(token) {
 export function clearAdminToken() {
   if (typeof window === 'undefined') return
   window.sessionStorage.removeItem(ADMIN_TOKEN_KEY)
+  window.sessionStorage.removeItem(LEGACY_ADMIN_TOKEN_KEY)
 }
 
 export async function fetchStateTravelEntries() {
@@ -114,25 +124,55 @@ export async function upsertStateTravelEntry(entry, auth = {}) {
   }
 }
 
-export async function validateAdminSecret(secretPhrase) {
+export async function validateEditorAccess({ adminToken, secretPhrase } = {}) {
+  const trimmedPhrase = typeof secretPhrase === 'string' ? secretPhrase.trim() : ''
+  const token = typeof adminToken === 'string' ? adminToken.trim() : ''
+
   if (!isSupabaseConfigured) {
-    return { adminToken: '', ok: Boolean(secretPhrase?.trim()) }
+    if (isLocalDevHost() && DEV_EDITOR_PHRASE) {
+      if (
+        (trimmedPhrase && trimmedPhrase === DEV_EDITOR_PHRASE)
+        || (token && token.startsWith('dev-editor:'))
+      ) {
+        return { adminToken: token || `dev-editor:${Date.now()}`, ok: true }
+      }
+
+      return {
+        adminToken: '',
+        message: 'That secret phrase doesn’t match. Try again.',
+        ok: false,
+      }
+    }
+
+    return {
+      adminToken: '',
+      message: isLocalDevHost() && !DEV_EDITOR_PHRASE
+        ? 'Local editor unlock needs VITE_DEV_EDITOR_PHRASE in .env.local.'
+        : 'Editor unlock is not configured yet. Check the Supabase function and secrets.',
+      ok: false,
+    }
   }
 
   const response = await fetch(`${SUPABASE_URL}/functions/v1/states-admin`, {
     method: 'POST',
     headers: getHeaders(),
     body: JSON.stringify({
+      adminToken: token || undefined,
       action: 'validate',
-      secretPhrase,
+      secretPhrase: trimmedPhrase || undefined,
     }),
   })
   const payload = await readJsonResponse(response)
+  const returnedToken = typeof payload.adminToken === 'string' ? payload.adminToken.trim() : ''
 
   return {
-    adminToken: payload.adminToken,
-    ok: Boolean(payload.ok ?? payload.success),
+    adminToken: returnedToken,
+    ok: payload.ok === true && Boolean(returnedToken),
   }
+}
+
+export async function validateAdminSecret(secretPhrase) {
+  return validateEditorAccess({ secretPhrase })
 }
 
 export async function deleteStateTravelEntry(entryIdOrStateCode, auth = {}) {
