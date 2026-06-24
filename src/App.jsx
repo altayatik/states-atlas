@@ -7,8 +7,6 @@ import { Achievements } from './components/Achievements'
 import { AtlasEditor } from './components/AtlasEditor'
 import { PasswordGate } from './components/PasswordGate'
 import { states as defaultStates } from './data/states'
-import { cities } from './data/cities'
-import { parks } from './data/parks'
 import { metroAreas } from './data/metroAreas'
 import { parkBoundaries } from './data/parkBoundaries'
 import { evaluateAchievements } from './utils/achievements'
@@ -209,10 +207,8 @@ function App() {
       <div className="app-shell app-shell--editor">
         {isLoadingEntries && <div className="sync-banner">Loading atlas entries...</div>}
         <AtlasEditor
-          cityOptions={cities}
           onBack={goPublic}
           onSave={persistState}
-          parkOptions={parks}
           states={states}
         />
       </div>

@@ -17,12 +17,12 @@ export const STATUS_LABELS = {
 }
 
 export const STATUS_COLORS = {
-  not_visited: '#f4eee2',
-  passed_through: '#d8bc89',
-  visited: '#81c7df',
-  stayed_overnight: '#2f7a57',
-  lived_there: '#3f4f8f',
-  favorite: '#f2bf45',
+  not_visited: '#f1eee7',
+  passed_through: '#ffd8a8',
+  visited: '#a9d6ff',
+  stayed_overnight: '#a8e6c3',
+  lived_there: '#c7b7ff',
+  favorite: '#ffe680',
 }
 
 export const BADGE_LABELS = {

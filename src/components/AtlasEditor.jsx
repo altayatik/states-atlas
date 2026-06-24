@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useState } from 'react'
 import { AlertTriangle, CheckCircle2, Loader2, X } from 'lucide-react'
 import { BADGE_LABELS, STATUSES, STATUS_LABELS } from '../data/states'
+import { getCityOptionsForState, getParkOptionsForState } from '../data/stateTravelOptions'
 import { formatStatus } from '../utils/formatters'
+import { isPlaceOptionSelected } from '../utils/places'
 
 function cloneState(state) {
   if (!state) return null
@@ -60,7 +62,7 @@ function validateDraft(draft) {
   return ''
 }
 
-export function AtlasEditor({ cityOptions = [], parkOptions = [], states, onBack, onSave }) {
+export function AtlasEditor({ states, onBack, onSave }) {
   const [selectedCode, setSelectedCode] = useState('')
   const [draft, setDraft] = useState(null)
   const [savedSnapshot, setSavedSnapshot] = useState('')
@@ -73,13 +75,13 @@ export function AtlasEditor({ cityOptions = [], parkOptions = [], states, onBack
   const isDirty = Boolean(draft && serializeDraft(draft) !== savedSnapshot)
 
   const stateCityOptions = useMemo(
-    () => cityOptions.filter((city) => city.stateCode === draft?.code),
-    [cityOptions, draft?.code],
+    () => getCityOptionsForState(draft?.code),
+    [draft?.code],
   )
 
   const stateParkOptions = useMemo(
-    () => parkOptions.filter((park) => park.states.includes(draft?.code)),
-    [draft?.code, parkOptions],
+    () => getParkOptionsForState(draft?.code),
+    [draft?.code],
   )
 
   useEffect(() => {
@@ -186,8 +188,9 @@ export function AtlasEditor({ cityOptions = [], parkOptions = [], states, onBack
   const toggleListItem = (field, value) => {
     setDraft((current) => {
       const currentList = current[field] ?? []
-      const nextList = currentList.includes(value)
-        ? currentList.filter((item) => item !== value)
+      const isSelected = isPlaceOptionSelected(currentList, value)
+      const nextList = isSelected
+        ? currentList.filter((item) => !isPlaceOptionSelected([item], value))
         : uniqueList([...currentList, value])
       return { ...current, [field]: nextList }
     })
@@ -371,13 +374,13 @@ export function AtlasEditor({ cityOptions = [], parkOptions = [], states, onBack
                   </div>
                   <div className="multi-check-list">
                     {stateCityOptions.map((city) => (
-                      <label key={city.id}>
+                      <label key={city}>
                         <input
-                          checked={draft.citiesVisited.includes(city.name)}
+                          checked={isPlaceOptionSelected(draft.citiesVisited, city)}
                           type="checkbox"
-                          onChange={() => toggleListItem('citiesVisited', city.name)}
+                          onChange={() => toggleListItem('citiesVisited', city)}
                         />
-                        {city.name}
+                        {city}
                       </label>
                     ))}
                   </div>
@@ -419,18 +422,22 @@ export function AtlasEditor({ cityOptions = [], parkOptions = [], states, onBack
                       <span className="empty-chip">No parks selected</span>
                     )}
                   </div>
-                  <div className="multi-check-list">
-                    {stateParkOptions.map((park) => (
-                      <label key={park.id}>
-                        <input
-                          checked={draft.parksVisited.includes(park.name)}
-                          type="checkbox"
-                          onChange={() => toggleListItem('parksVisited', park.name)}
-                        />
-                        {park.name}
-                      </label>
-                    ))}
-                  </div>
+                  {stateParkOptions.length > 0 ? (
+                    <div className="multi-check-list">
+                      {stateParkOptions.map((park) => (
+                        <label key={park}>
+                          <input
+                            checked={isPlaceOptionSelected(draft.parksVisited, park)}
+                            type="checkbox"
+                            onChange={() => toggleListItem('parksVisited', park)}
+                          />
+                          {park}
+                        </label>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="empty-option-note">No national parks in this state :(</p>
+                  )}
                   <div className="custom-add-row">
                     <input
                       placeholder="Add a custom park"

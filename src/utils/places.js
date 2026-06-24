@@ -1,12 +1,18 @@
 const METRO_ALIASES = {
   'sf-bay-area': ['San Francisco'],
+  'los-angeles': ['Los Angeles Metropolitan Area'],
   'new-york-city': ['New York'],
+}
+
+const PLACE_ALIASES = {
+  'new york city': ['New York'],
 }
 
 export function normalizePlaceName(value) {
   return String(value ?? '')
     .toLowerCase()
     .replace(/\bnational park\b/g, '')
+    .replace(/\b(metropolitan area|metro area|bay area|area)\b/g, '')
     .replace(/[^a-z0-9]+/g, ' ')
     .trim()
 }
@@ -20,6 +26,19 @@ export function getMetroNameOptions(metro) {
     metro?.name,
     ...(METRO_ALIASES[metro?.id] ?? []),
   ])
+}
+
+export function getPlaceOptionNames(value) {
+  const normalized = normalizePlaceName(value)
+  return uniqueValues([
+    value,
+    ...(PLACE_ALIASES[normalized] ?? []),
+  ])
+}
+
+export function isPlaceOptionSelected(items = [], option) {
+  const optionNames = new Set(getPlaceOptionNames(option).map(normalizePlaceName))
+  return items.some((item) => optionNames.has(normalizePlaceName(item)))
 }
 
 export function getParkNameOptions(park) {
@@ -42,7 +61,7 @@ function hasLoggedName(entries, field, names) {
       .map(normalizePlaceName),
   )
 
-  return names.some((name) => loggedNames.has(normalizePlaceName(name)))
+  return names.some((name) => isPlaceOptionSelected([...loggedNames], name))
 }
 
 export function isMetroVisited(metro, states) {

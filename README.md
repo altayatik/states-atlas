@@ -34,9 +34,11 @@ The source repo is `altayatik/states-atlas`; the GitHub Pages deployment repo is
 
 The current editor route is deployed inside the same app at `/states/#/edit`. To deploy the preferred exact `/states-edit/` URL later without changing this app's public base, create a separate Pages deployment for that path, build with a `/states-edit/` base, and point it at the same source code/editor route.
 
-The public header includes a small `Edit atlas` link to `/states/#/edit`. The editor is still protected by the Supabase secret phrase gate.
+The public header includes a small icon-only wrench link to `/states/#/edit`. The editor is still protected by the Supabase secret phrase gate.
 
 The public `/states/` page is intentionally simple: header, compact stats, central map, selected detail panel, and achievements. City/metro and national park outlines are zoom-dependent supporting layers; they are hidden at the default view, appear only after zooming in, and do not use persistent text labels.
+
+City and park editor options are powered by `src/data/stateTravelOptions.js`. Those options are curated travel starters, not exhaustive city lists. National park options include official "National Park" units only, not every NPS-managed site. States with no official national parks show a friendly empty message in the editor.
 
 ## Supabase Setup
 
@@ -213,7 +215,7 @@ If Supabase env vars exist, public reads come from Supabase and writes go throug
 
 The editor uses a dropdown-first workflow: choose one state and edit that state inline. Changes autosave when closing the editor form, switching to another state, or returning to the public atlas. City and national park selections are stored as arrays in `cities_visited` and `parks_visited`; the frontend maps those to `citiesVisited` and `parksVisited`.
 
-City and national park selections are editable and shown textually in the selected state detail panel. Existing city/park shapes are simplified visual approximations, not official boundaries. Their public map outlines are subtle zoom-only layers, and clicked outlines update the selected detail panel without adding label clutter. Alaska and Hawaii are represented as atlas-style clickable inset buttons so they remain clean, selectable, and status-colored without distorted geometry.
+City and national park selections are editable and shown textually in the selected state detail panel. Existing city/park shapes are simplified visual approximations, not official boundaries, and only some selected cities/parks have local geometry today. Their public map outlines are subtle zoom-only layers, and clicked outlines update the selected detail panel without adding label clutter. Alaska and Hawaii are represented as atlas-style clickable SVG mini-map insets so they remain clean, recognizable, selectable, and status-colored without distorted geometry.
 
 ## Security Model
 

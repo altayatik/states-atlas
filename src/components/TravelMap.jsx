@@ -21,7 +21,7 @@ const MAP_STYLE = {
       id: 'atlas-paper',
       type: 'background',
       paint: {
-        'background-color': '#f4ead8',
+        'background-color': '#fff3df',
       },
     },
   ],
@@ -83,6 +83,26 @@ function fitDefaultBounds(map) {
   })
 }
 
+function InsetSilhouette({ code }) {
+  if (code === 'HI') {
+    return (
+      <svg aria-hidden="true" className="map-inset__shape" viewBox="0 0 120 70">
+        <ellipse cx="24" cy="30" rx="7" ry="4" transform="rotate(-18 24 30)" />
+        <ellipse cx="43" cy="37" rx="9" ry="5" transform="rotate(-15 43 37)" />
+        <ellipse cx="64" cy="43" rx="12" ry="6" transform="rotate(-12 64 43)" />
+        <ellipse cx="92" cy="50" rx="17" ry="8" transform="rotate(-10 92 50)" />
+      </svg>
+    )
+  }
+
+  return (
+    <svg aria-hidden="true" className="map-inset__shape" viewBox="0 0 120 70">
+      <path d="M17 36 L30 17 L57 12 L82 19 L101 31 L91 45 L62 50 L44 43 L31 57 L21 50 Z" />
+      <path className="map-inset__islands" d="M37 58 L48 61 L59 62 M66 62 L75 64 M83 63 L94 65 M101 63 L110 64" />
+    </svg>
+  )
+}
+
 export function TravelMap({
   metros = [],
   parks = [],
@@ -131,34 +151,46 @@ export function TravelMap({
 
   const metrosGeoJson = useMemo(() => ({
     type: 'FeatureCollection',
-    features: metros.map((metro) => ({
-      type: 'Feature',
-      id: metro.id,
-      properties: {
+    features: metros.map((metro) => {
+      const selected = selectedPlaceType === 'metro' && selectedPlaceId === metro.id
+      const visited = isMetroVisited(metro, states)
+      if (!selected && !visited) return null
+
+      return {
+        type: 'Feature',
         id: metro.id,
-        kind: 'metro',
-        name: metro.name,
-        selected: selectedPlaceType === 'metro' && selectedPlaceId === metro.id,
-        visited: isMetroVisited(metro, states),
-      },
-      geometry: metro.geometry,
-    })),
+        properties: {
+          id: metro.id,
+          kind: 'metro',
+          name: metro.name,
+          selected,
+          visited,
+        },
+        geometry: metro.geometry,
+      }
+    }).filter(Boolean),
   }), [metros, selectedPlaceId, selectedPlaceType, states])
 
   const parksGeoJson = useMemo(() => ({
     type: 'FeatureCollection',
-    features: parks.map((park) => ({
-      type: 'Feature',
-      id: park.id,
-      properties: {
+    features: parks.map((park) => {
+      const selected = selectedPlaceType === 'park' && selectedPlaceId === park.id
+      const visited = isParkVisited(park, states)
+      if (!selected && !visited) return null
+
+      return {
+        type: 'Feature',
         id: park.id,
-        kind: 'park',
-        name: park.name,
-        selected: selectedPlaceType === 'park' && selectedPlaceId === park.id,
-        visited: isParkVisited(park, states),
-      },
-      geometry: park.geometry,
-    })),
+        properties: {
+          id: park.id,
+          kind: 'park',
+          name: park.name,
+          selected,
+          visited,
+        },
+        geometry: park.geometry,
+      }
+    }).filter(Boolean),
   }), [parks, selectedPlaceId, selectedPlaceType, states])
 
   useEffect(() => {
@@ -223,7 +255,7 @@ export function TravelMap({
         type: 'line',
         source: 'states',
         paint: {
-          'line-color': '#6c5643',
+          'line-color': '#6f6048',
           'line-opacity': 0.72,
           'line-width': ['interpolate', ['linear'], ['zoom'], 3, 0.8, 6, 1.4],
         },
@@ -235,7 +267,7 @@ export function TravelMap({
         source: 'metros',
         minzoom: 4,
         paint: {
-          'fill-color': '#1f83a6',
+          'fill-color': '#87c9ff',
           'fill-opacity': placeFillOpacity,
         },
       })
@@ -246,7 +278,7 @@ export function TravelMap({
         source: 'metros',
         minzoom: 4,
         paint: {
-          'line-color': '#214f57',
+          'line-color': '#3d7d96',
           'line-opacity': [
             'case',
             ['boolean', ['get', 'selected'], false],
@@ -265,7 +297,7 @@ export function TravelMap({
         source: 'parks',
         minzoom: 4.5,
         paint: {
-          'fill-color': '#2f7a57',
+          'fill-color': '#a8e6c3',
           'fill-opacity': placeFillOpacity,
         },
       })
@@ -276,7 +308,7 @@ export function TravelMap({
         source: 'parks',
         minzoom: 4.5,
         paint: {
-          'line-color': '#2f7a57',
+          'line-color': '#4f9a70',
           'line-opacity': [
             'case',
             ['boolean', ['get', 'selected'], false],
@@ -421,6 +453,7 @@ export function TravelMap({
               type="button"
               onClick={() => onSelectState(state.code)}
             >
+              <InsetSilhouette code={state.code} />
               <span>{state.code}</span>
               <small>{state.name}</small>
             </button>
