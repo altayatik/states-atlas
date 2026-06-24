@@ -118,34 +118,48 @@ function fitDefaultBounds(map) {
   })
 }
 
-function InsetSilhouette({ code }) {
-  if (code === 'HI') {
-    return (
-      <svg aria-hidden="true" className="state-inset__shape state-inset__shape--hi" viewBox="0 0 210 92">
-        <path d="M20 29 C26 22 38 21 46 27 C42 36 28 38 20 29 Z" />
-        <path d="M57 39 C66 30 82 31 91 40 C84 51 66 51 57 39 Z" />
-        <path d="M102 52 C114 41 135 43 146 56 C136 70 114 68 102 52 Z" />
-        <path d="M155 64 C166 55 184 57 194 69 C183 82 164 79 155 64 Z" />
-        <ellipse cx="49" cy="54" rx="3.8" ry="2.8" transform="rotate(-12 49 54)" />
-        <ellipse cx="82" cy="61" rx="4" ry="3" transform="rotate(10 82 61)" />
-        <ellipse cx="132" cy="78" rx="3" ry="2.2" transform="rotate(-8 132 78)" />
-      </svg>
-    )
-  }
-
+function AlaskaMiniMap() {
   return (
-    <svg aria-hidden="true" className="state-inset__shape state-inset__shape--ak" viewBox="0 0 236 118">
-      <path d="M15 65 L30 43 L27 30 L47 24 L70 12 L101 15 L121 27 L151 29 L176 39 L216 47 L225 63 L207 76 L170 78 L144 87 L111 77 L83 86 L57 106 L42 91 L24 99 L18 82 Z" />
-      <path className="state-inset__cutline" d="M39 31 C75 52 128 49 166 33" />
-      <circle className="state-inset__island" cx="80" cy="103" r="3.4" />
-      <circle className="state-inset__island" cx="99" cy="108" r="3" />
-      <circle className="state-inset__island" cx="119" cy="111" r="2.8" />
-      <circle className="state-inset__island" cx="141" cy="112" r="2.5" />
-      <circle className="state-inset__island" cx="164" cy="110" r="2.3" />
-      <circle className="state-inset__island" cx="188" cy="105" r="2" />
-      <circle className="state-inset__island" cx="210" cy="99" r="1.8" />
+    <svg aria-hidden="true" className="state-inset-shape state-inset-shape--alaska" viewBox="0 0 220 140">
+      {/* Broad western mainland + Arctic coast */}
+      <path d="M34 18 L56 10 L80 14 L98 9 L116 16 L126 28 L118 40 L130 38 L140 50 L128 60 L108 56 L94 66 L78 60 L64 68 L48 60 L34 50 L24 36 L26 24 Z" />
+      {/* Southeast panhandle suggestion, trailing down-right from the mainland */}
+      <path d="M118 40 L138 56 L148 76 L156 96 L150 114 L138 110 L130 90 L116 66 L110 50 Z" />
+      {/* Alaska Peninsula tapering southwest toward the Aleutians */}
+      <path d="M64 68 L50 76 L36 82 L24 86 L14 88 L20 78 L34 72 L48 64 Z" />
+      {/* Aleutian island chain: many small dots trailing further southwest */}
+      <circle className="state-inset-island" cx="6" cy="90" r="2.6" />
+      <circle className="state-inset-island" cx="-6" cy="94" r="2.2" />
+      <circle className="state-inset-island" cx="-17" cy="99" r="1.9" />
+      <circle className="state-inset-island" cx="-27" cy="105" r="1.6" />
+      <circle className="state-inset-island" cx="-36" cy="112" r="1.3" />
     </svg>
   )
+}
+
+function HawaiiMiniMap() {
+  return (
+    <svg aria-hidden="true" className="state-inset-shape state-inset-shape--hawaii" viewBox="0 0 160 90">
+      {/* Kauai - small, northwest end of the chain */}
+      <path className="state-inset-island" d="M16 16 C22 10 31 11 34 18 C37 25 31 30 23 28 C16 26 12 21 16 16 Z" />
+      {/* Oahu */}
+      <path className="state-inset-island" d="M42 26 C50 20 61 22 64 30 C67 38 58 43 48 40 C40 37 37 31 42 26 Z" />
+      {/* Maui (with Molokai/Lanai suggested as the same cluster) */}
+      <path className="state-inset-island" d="M70 39 C80 32 94 35 98 45 C101 54 90 59 78 56 C69 53 64 45 70 39 Z" />
+      {/* Big Island - largest, lower/right */}
+      <path className="state-inset-island" d="M104 53 C122 44 144 51 150 68 C155 83 136 89 116 85 C99 81 92 67 99 58 C100 56 102 54 104 53 Z" />
+    </svg>
+  )
+}
+
+const INSET_COMPONENTS = {
+  AK: AlaskaMiniMap,
+  HI: HawaiiMiniMap,
+}
+
+const INSET_SLUG = {
+  AK: 'alaska',
+  HI: 'hawaii',
 }
 
 export function TravelMap({
@@ -385,25 +399,32 @@ export function TravelMap({
 
       <div className="map-shell map-shell--maplibre">
         <div ref={mapContainerRef} className="maplibre-atlas" aria-label="Gesture-driven United States travel map" />
-        <div className="state-inset-group" aria-label="Alaska and Hawaii map insets">
-          {insetStates.map((state) => (
-            <button
-              aria-label={`Select ${state.name}`}
-              className={[
-                'state-inset',
-                `state-inset--${state.code.toLowerCase()}`,
-                state.code === selectedStateCode ? 'is-selected' : '',
-              ].filter(Boolean).join(' ')}
-              key={state.code}
-              style={{ '--state-color': STATUS_COLORS[state.status] }}
-              type="button"
-              onClick={() => onSelectState(state.code)}
-            >
-              <InsetSilhouette code={state.code} />
-              <span className="state-inset__code">{state.code}</span>
-              <span className="state-inset__name">{state.name}</span>
-            </button>
-          ))}
+        <div className="state-insets" aria-label="Alaska and Hawaii map insets">
+          {insetStates.map((state) => {
+            const InsetMap = INSET_COMPONENTS[state.code]
+            if (!InsetMap) return null
+
+            return (
+              <button
+                aria-label={`Select ${state.name}`}
+                className={[
+                  'state-inset',
+                  `state-inset--${INSET_SLUG[state.code]}`,
+                  state.code === selectedStateCode ? 'is-selected' : '',
+                ].filter(Boolean).join(' ')}
+                key={state.code}
+                style={{ '--state-color': STATUS_COLORS[state.status] }}
+                type="button"
+                onClick={() => onSelectState(state.code)}
+              >
+                <InsetMap />
+                <span className="state-inset-label">
+                  <span className="state-inset-label__code">{state.code}</span>
+                  <span className="state-inset-label__name">{state.name}</span>
+                </span>
+              </button>
+            )
+          })}
         </div>
       </div>
 

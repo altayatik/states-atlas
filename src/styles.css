@@ -14,6 +14,10 @@
   --sage: #9fbea4;
   --trail: #2f4a68;
   --ink-muted: #5c6f82;
+  --heading-blue: #213a5a;
+  --text-blue: #2f4a68;
+  --muted-blue: #5d7288;
+  --border-blue: #9fb2c3;
   font-family:
     Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   font-synthesis: none;
@@ -113,7 +117,7 @@ textarea:focus-visible,
 .atlas-header h1 {
   max-width: none;
   margin: 2px 0 6px;
-  color: #9c5739;
+  color: var(--heading-blue);
   font-family: Georgia, "Times New Roman", serif;
   font-size: clamp(1.85rem, 3.8vw, 3.35rem);
   line-height: 1;
@@ -196,9 +200,9 @@ textarea:focus-visible,
   gap: 8px;
   width: max-content;
   padding: 10px 14px;
-  border: 2px dashed #b43d2d;
+  border: 2px dashed var(--border-blue);
   border-radius: 12px;
-  color: #8a4b3a;
+  color: var(--heading-blue);
   font-weight: 900;
   text-transform: uppercase;
   transform: rotate(2deg);
@@ -379,7 +383,7 @@ textarea:focus-visible,
 
 .map-hint {
   margin: -2px 0 12px;
-  color: #6f5845;
+  color: var(--muted-blue);
   font-size: 0.9rem;
   font-weight: 800;
 }
@@ -408,7 +412,7 @@ textarea:focus-visible,
   height: 100%;
 }
 
-.state-inset-group {
+.state-insets {
   position: absolute;
   left: 20px;
   bottom: 18px;
@@ -425,9 +429,9 @@ textarea:focus-visible,
 .state-inset {
   position: relative;
   display: block;
-  width: 178px;
-  height: 105px;
-  padding: 0;
+  width: 150px;
+  height: 100px;
+  padding: 6px 6px 28px;
   overflow: visible;
   border: 0;
   background: transparent;
@@ -436,95 +440,92 @@ textarea:focus-visible,
   pointer-events: auto;
 }
 
-.state-inset--ak {
-  width: 206px;
+.state-inset--alaska {
+  width: 168px;
 }
 
-.state-inset--hi {
-  width: 166px;
+.state-inset--hawaii {
+  width: 136px;
 }
 
+/* very light dashed guide so the inset reads as a map, not a card/box */
 .state-inset::before {
-  content: none;
+  position: absolute;
+  inset: 0 0 22px;
+  border: 1px dashed rgba(159, 178, 195, 0.4);
+  border-radius: 10px;
+  background: transparent;
+  content: "";
 }
 
-.state-inset:hover,
-.state-inset.is-selected {
-  filter: drop-shadow(0 4px 5px rgba(47, 74, 104, 0.26));
+.state-inset:hover .state-inset-shape,
+.state-inset.is-selected .state-inset-shape,
+.state-inset:focus-visible .state-inset-shape {
+  stroke-width: 4;
+  filter: drop-shadow(0 0 5px rgba(30, 120, 152, 0.4));
 }
 
 .state-inset:focus-visible {
   outline: 0;
 }
 
-.state-inset:focus-visible .state-inset__shape,
-.state-inset.is-selected .state-inset__shape {
-  stroke-width: 4;
-  filter:
-    drop-shadow(0 0 0 rgba(255, 255, 255, 0))
-    drop-shadow(0 0 5px rgba(30, 120, 152, 0.38));
+.state-inset:focus-visible::before,
+.state-inset.is-selected::before {
+  border-color: rgba(33, 58, 90, 0.55);
 }
 
-.state-inset__code {
+.state-inset-label {
   position: absolute;
-  left: 5px;
-  bottom: 17px;
-  color: #2f4a68;
-  font-size: 0.98rem;
+  left: 6px;
+  bottom: 2px;
+  display: block;
+}
+
+.state-inset-label__code {
+  display: block;
+  color: var(--heading-blue);
+  font-size: 0.94rem;
   font-weight: 950;
-  line-height: 1;
+  line-height: 1.1;
   text-shadow: 0 1px 0 rgba(255, 250, 240, 0.84);
 }
 
-.state-inset__name {
-  position: absolute;
-  left: 5px;
-  bottom: 3px;
+.state-inset-label__name {
+  display: block;
   color: var(--ink-muted);
-  font-size: 0.64rem;
+  font-size: 0.62rem;
   font-weight: 900;
   text-shadow: 0 1px 0 rgba(255, 250, 240, 0.84);
 }
 
-.state-inset__shape {
+.state-inset-shape {
   position: relative;
   z-index: 1;
   width: 100%;
-  height: 84px;
+  height: 70px;
   fill: var(--state-color);
-  stroke: #2f4a68;
+  stroke: var(--heading-blue);
   stroke-linecap: round;
   stroke-linejoin: round;
-  stroke-width: 2.8;
+  stroke-width: 2.6;
   filter: drop-shadow(0 2px 0 rgba(255, 255, 255, 0.72));
 }
 
-.state-inset__shape--ak {
-  width: 198px;
-  height: 92px;
+.state-inset-shape--alaska {
+  width: 156px;
+  height: 76px;
+  overflow: visible;
 }
 
-.state-inset__shape--hi {
-  width: 160px;
-  height: 78px;
+.state-inset-shape--hawaii {
+  width: 124px;
+  height: 64px;
 }
 
-.state-inset__islands,
-.state-inset__cutline,
-.state-inset__island {
-  fill: none;
-  stroke-width: 3;
-}
-
-.state-inset__island {
+.state-inset-island {
   fill: var(--state-color);
-  stroke: #2f4a68;
-  stroke-width: 2.2;
-}
-
-.state-inset__cutline {
-  opacity: 0.35;
-  stroke-width: 1.5;
+  stroke: var(--heading-blue);
+  stroke-width: 1.8;
 }
 
 .maplibre-atlas .maplibregl-canvas {
@@ -751,17 +752,21 @@ textarea:focus-visible,
 
 .achievement-grid {
   display: grid;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
-  gap: 8px;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 150px));
+  gap: 10px;
 }
 
 .achievement {
+  display: flex;
   min-width: 0;
-  border: 1px solid rgba(47, 74, 104, 0.14);
-  border-radius: 2px;
+  width: 100%;
+  min-height: 112px;
+  max-height: 134px;
+  border: 1px solid rgba(47, 74, 104, 0.16);
+  border-radius: 8px;
   background: rgba(255, 250, 240, 0.84);
   filter: grayscale(0.6);
-  opacity: 0.58;
+  opacity: 0.55;
 }
 
 .achievement--unlocked {
@@ -775,28 +780,31 @@ textarea:focus-visible,
 
 .achievement--expanded {
   grid-column: span 2;
+  max-height: none;
   box-shadow: 0 12px 22px rgba(47, 74, 104, 0.12);
 }
 
 .achievement__button {
-  display: grid;
-  grid-template-columns: 30px minmax(0, 1fr);
-  gap: 8px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
   width: 100%;
-  min-height: 62px;
-  padding: 8px;
+  height: 100%;
+  padding: 10px 8px;
   border: 0;
   background: transparent;
   color: inherit;
-  text-align: left;
+  text-align: center;
 }
 
 .achievement__icon {
   display: grid;
   flex: 0 0 auto;
-  width: 30px;
-  height: 30px;
-  border-radius: 2px;
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
   place-items: center;
   background: color-mix(in srgb, var(--achievement-accent, #a9d6ff) 85%, white 15%);
   color: #2f4a68;
@@ -806,27 +814,35 @@ textarea:focus-visible,
   display: grid;
   gap: 2px;
   min-width: 0;
+  text-align: center;
 }
 
 .achievement__text strong {
+  display: -webkit-box;
   overflow: hidden;
-  font-size: 0.78rem;
+  font-size: 0.74rem;
   font-weight: 950;
-  line-height: 1.1;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  line-height: 1.18;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
 }
 
 .achievement__text small {
+  display: block;
+  overflow: hidden;
   color: var(--ink-muted);
-  font-size: 0.68rem;
+  font-size: 0.64rem;
   font-weight: 850;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .achievement__details {
   display: grid;
   gap: 8px;
-  padding: 0 10px 10px 47px;
+  width: 100%;
+  padding: 0 10px 10px;
+  text-align: center;
 }
 
 .achievement__details p {
@@ -889,7 +905,7 @@ textarea:focus-visible,
 }
 
 .range-value {
-  color: #8a4b3a;
+  color: var(--muted-blue);
 }
 
 .edit-form fieldset {
@@ -946,7 +962,7 @@ textarea:focus-visible,
   min-height: 0;
   border: 0;
   background: transparent;
-  color: #8a4b3a;
+  color: var(--muted-blue);
   font-size: 0.72rem;
   font-weight: 950;
 }
@@ -995,8 +1011,8 @@ textarea:focus-visible,
 .form-error {
   padding: 10px 12px;
   border-radius: 12px;
-  background: #f8ddd5;
-  color: #8a4b3a;
+  background: #e6ecf2;
+  color: var(--heading-blue);
 }
 
 .editor-gate {
@@ -1024,7 +1040,7 @@ textarea:focus-visible,
 .gate-card h1,
 .editor-header h1 {
   margin: 4px 0 10px;
-  color: #8a4b3a;
+  color: var(--heading-blue);
   font-family: Georgia, "Times New Roman", serif;
   font-size: clamp(2.1rem, 7vw, 4rem);
   line-height: 0.98;
@@ -1157,8 +1173,8 @@ textarea:focus-visible,
 }
 
 .save-status--error {
-  background: #f8ddd5;
-  color: #8a4b3a;
+  background: #e6ecf2;
+  color: var(--heading-blue);
 }
 
 .save-status--saved {
@@ -1176,10 +1192,6 @@ textarea:focus-visible,
 
   .detail-panel {
     position: static;
-  }
-
-  .achievement-grid {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 }
 
@@ -1224,7 +1236,8 @@ textarea:focus-visible,
   }
 
   .achievement-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(104px, 130px));
+    justify-content: center;
   }
 
   .regional-progress {
@@ -1250,7 +1263,7 @@ textarea:focus-visible,
     min-height: 420px;
   }
 
-  .state-inset-group {
+  .state-insets {
     left: 10px;
     bottom: 10px;
     gap: 8px;
@@ -1259,35 +1272,35 @@ textarea:focus-visible,
   }
 
   .state-inset {
+    width: 100px;
+    height: 64px;
+    padding: 4px 4px 22px;
+  }
+
+  .state-inset--alaska {
     width: 112px;
-    height: 70px;
   }
 
-  .state-inset--ak {
-    width: 138px;
+  .state-inset--hawaii {
+    width: 92px;
   }
 
-  .state-inset--hi {
+  .state-inset-shape--alaska {
     width: 104px;
+    height: 50px;
   }
 
-  .state-inset__shape--ak {
-    width: 145px;
-    height: 68px;
+  .state-inset-shape--hawaii {
+    width: 84px;
+    height: 42px;
   }
 
-  .state-inset__shape--hi {
-    width: 104px;
-    height: 58px;
+  .state-inset-label__code {
+    font-size: 0.78rem;
   }
 
-  .state-inset__code {
-    bottom: 10px;
-    font-size: 0.84rem;
-  }
-
-  .state-inset__name {
-    font-size: 0.56rem;
+  .state-inset-label__name {
+    font-size: 0.52rem;
   }
 
   .editor-header {
