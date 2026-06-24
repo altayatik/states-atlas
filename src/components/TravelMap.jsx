@@ -121,27 +121,29 @@ function fitDefaultBounds(map) {
 function InsetSilhouette({ code }) {
   if (code === 'HI') {
     return (
-      <svg aria-hidden="true" className="state-inset__shape state-inset__shape--hi" viewBox="0 0 190 84">
-        <path d="M20 30 C29 20 45 21 53 31 C47 41 29 42 20 30 Z" />
-        <path d="M62 42 C76 31 96 35 104 49 C92 62 72 57 62 42 Z" />
-        <path d="M111 56 C126 44 150 50 158 65 C143 78 120 72 111 56 Z" />
-        <path d="M164 65 C173 59 186 62 190 72 C181 80 168 77 164 65 Z" />
-        <circle cx="48" cy="57" r="3.3" />
-        <circle cx="86" cy="66" r="3" />
+      <svg aria-hidden="true" className="state-inset__shape state-inset__shape--hi" viewBox="0 0 210 92">
+        <path d="M20 29 C26 22 38 21 46 27 C42 36 28 38 20 29 Z" />
+        <path d="M57 39 C66 30 82 31 91 40 C84 51 66 51 57 39 Z" />
+        <path d="M102 52 C114 41 135 43 146 56 C136 70 114 68 102 52 Z" />
+        <path d="M155 64 C166 55 184 57 194 69 C183 82 164 79 155 64 Z" />
+        <ellipse cx="49" cy="54" rx="3.8" ry="2.8" transform="rotate(-12 49 54)" />
+        <ellipse cx="82" cy="61" rx="4" ry="3" transform="rotate(10 82 61)" />
+        <ellipse cx="132" cy="78" rx="3" ry="2.2" transform="rotate(-8 132 78)" />
       </svg>
     )
   }
 
   return (
-    <svg aria-hidden="true" className="state-inset__shape state-inset__shape--ak" viewBox="0 0 212 104">
-      <path d="M14 57 L30 30 L69 13 L106 15 L134 29 L184 39 L199 56 L177 72 L135 74 L101 65 L77 80 L50 96 L36 81 L20 88 L11 72 Z" />
-      <path className="state-inset__cutline" d="M34 33 C65 49 108 46 146 30" />
-      <circle className="state-inset__island" cx="79" cy="92" r="3.2" />
-      <circle className="state-inset__island" cx="96" cy="96" r="2.8" />
-      <circle className="state-inset__island" cx="115" cy="98" r="2.6" />
-      <circle className="state-inset__island" cx="135" cy="98" r="2.4" />
-      <circle className="state-inset__island" cx="156" cy="96" r="2.2" />
-      <circle className="state-inset__island" cx="178" cy="92" r="2" />
+    <svg aria-hidden="true" className="state-inset__shape state-inset__shape--ak" viewBox="0 0 236 118">
+      <path d="M15 65 L30 43 L27 30 L47 24 L70 12 L101 15 L121 27 L151 29 L176 39 L216 47 L225 63 L207 76 L170 78 L144 87 L111 77 L83 86 L57 106 L42 91 L24 99 L18 82 Z" />
+      <path className="state-inset__cutline" d="M39 31 C75 52 128 49 166 33" />
+      <circle className="state-inset__island" cx="80" cy="103" r="3.4" />
+      <circle className="state-inset__island" cx="99" cy="108" r="3" />
+      <circle className="state-inset__island" cx="119" cy="111" r="2.8" />
+      <circle className="state-inset__island" cx="141" cy="112" r="2.5" />
+      <circle className="state-inset__island" cx="164" cy="110" r="2.3" />
+      <circle className="state-inset__island" cx="188" cy="105" r="2" />
+      <circle className="state-inset__island" cx="210" cy="99" r="1.8" />
     </svg>
   )
 }
@@ -283,7 +285,7 @@ export function TravelMap({
         source: 'states',
         filter: ['==', ['get', 'selected'], true],
         paint: {
-          'line-color': '#2d241e',
+          'line-color': '#24384f',
           'line-width': ['interpolate', ['linear'], ['zoom'], 3, 2.2, 6, 4.2],
         },
       })
