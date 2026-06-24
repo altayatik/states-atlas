@@ -34,7 +34,7 @@ function getIsEditorRoute() {
 
 function App() {
   const [states, setStates] = useState(defaultStates)
-  const [selectedStateCode, setSelectedStateCode] = useState('CA')
+  const [selectedStateCode, setSelectedStateCode] = useState('')
   const [isLoadingEntries, setIsLoadingEntries] = useState(true)
   const [isEditorRoute, setIsEditorRoute] = useState(getIsEditorRoute)
   const [isEditorUnlocked, setIsEditorUnlocked] = useState(false)

@@ -56,6 +56,8 @@ export function evaluateAchievements(states) {
   const stateByCode = new Map(states.map((state) => [state.code, state]))
   const visitedCodes = new Set(states.filter(isVisited).map((state) => state.code))
   const favoriteCount = states.filter((state) => state.status === 'favorite').length
+  const cityCount = new Set(states.flatMap((state) => state.citiesVisited ?? []).filter(Boolean)).size
+  const parkCount = new Set(states.flatMap((state) => state.parksVisited ?? []).filter(Boolean)).size
 
   return achievements.map((achievement) => {
     let unlocked = false
@@ -77,10 +79,26 @@ export function evaluateAchievements(states) {
       unlocked = favoriteCount >= achievement.threshold
     }
 
+    if (achievement.type === 'cities') {
+      progress = cityCount
+      unlocked = cityCount >= achievement.threshold
+    }
+
+    if (achievement.type === 'parks') {
+      progress = parkCount
+      unlocked = parkCount >= achievement.threshold
+    }
+
     if (achievement.type === 'contiguous') {
       progress = contiguousStates.filter((code) => isVisited(stateByCode.get(code))).length
       total = contiguousStates.length
       unlocked = progress === contiguousStates.length
+    }
+
+    if (achievement.type === 'all_states') {
+      progress = visitedCodes.size
+      total = states.length
+      unlocked = progress === states.length
     }
 
     return {
@@ -88,6 +106,7 @@ export function evaluateAchievements(states) {
       unlocked,
       progress: Math.min(progress, total),
       total,
+      progressText: `${Math.min(progress, total)}/${total}`,
     }
   })
 }

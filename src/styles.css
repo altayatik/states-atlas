@@ -1,6 +1,17 @@
 :root {
-  color: #2d241e;
-  background: #fff3df;
+  color: #3d3026;
+  background: #fff7e6;
+  --paper: #fffaf0;
+  --cream: #fff7e6;
+  --sky: #a9d6ff;
+  --mint: #a8e6c3;
+  --sunflower: #ffe680;
+  --peach: #ffb3a7;
+  --lavender: #c7b7ff;
+  --rose: #f7a6b8;
+  --teal: #8edfd2;
+  --trail: #3d3026;
+  --ink-muted: #5b4a3f;
   font-family:
     Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   font-synthesis: none;
@@ -14,10 +25,11 @@
 
 html {
   background:
-    radial-gradient(circle at 18% 8%, rgba(255, 154, 162, 0.2), transparent 28rem),
-    radial-gradient(circle at 82% 0%, rgba(169, 214, 255, 0.24), transparent 24rem),
-    radial-gradient(circle at 74% 32%, rgba(168, 230, 195, 0.2), transparent 22rem),
-    #fff3df;
+    radial-gradient(circle at 15% 6%, rgba(247, 166, 184, 0.28), transparent 25rem),
+    radial-gradient(circle at 84% 2%, rgba(169, 214, 255, 0.35), transparent 24rem),
+    radial-gradient(circle at 74% 34%, rgba(142, 223, 210, 0.22), transparent 22rem),
+    radial-gradient(circle at 6% 70%, rgba(255, 230, 128, 0.22), transparent 22rem),
+    #fff7e6;
 }
 
 body {
@@ -82,14 +94,14 @@ textarea:focus-visible,
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
-  gap: 18px;
-  padding: 20px 22px;
-  border: 2px solid rgba(79, 68, 48, 0.16);
+  gap: 16px;
+  padding: 16px 18px;
+  border: 2px solid rgba(61, 48, 38, 0.14);
   border-radius: 18px;
   background:
-    linear-gradient(135deg, rgba(255, 248, 230, 0.92), rgba(255, 216, 168, 0.52)),
+    linear-gradient(135deg, rgba(255, 250, 240, 0.94), rgba(169, 214, 255, 0.22) 48%, rgba(255, 179, 167, 0.3)),
     repeating-linear-gradient(45deg, rgba(86, 54, 34, 0.035) 0 1px, transparent 1px 8px);
-  box-shadow: 0 16px 34px rgba(79, 53, 34, 0.12);
+  box-shadow: 0 14px 30px rgba(79, 53, 34, 0.1);
 }
 
 .atlas-header__copy {
@@ -98,10 +110,10 @@ textarea:focus-visible,
 
 .atlas-header h1 {
   max-width: none;
-  margin: 2px 0 8px;
+  margin: 2px 0 6px;
   color: #b6425a;
   font-family: Georgia, "Times New Roman", serif;
-  font-size: clamp(2rem, 4.6vw, 4rem);
+  font-size: clamp(1.85rem, 3.8vw, 3.35rem);
   line-height: 1;
   letter-spacing: 0;
   white-space: nowrap;
@@ -110,8 +122,8 @@ textarea:focus-visible,
 .atlas-header p {
   max-width: 720px;
   margin: 0;
-  color: #594638;
-  font-size: 0.98rem;
+  color: var(--ink-muted);
+  font-size: 0.92rem;
 }
 
 .atlas-header__actions {
@@ -143,7 +155,7 @@ textarea:focus-visible,
   min-height: 44px;
   border: 0;
   border-radius: 999px;
-  background: #f26d7d;
+  background: linear-gradient(135deg, #f26d7d, #ff9b83);
   color: #fff8e9;
   font-weight: 800;
   box-shadow: 0 10px 18px rgba(180, 66, 90, 0.2);
@@ -161,8 +173,8 @@ textarea:focus-visible,
 }
 
 .button--secondary {
-  border: 1px solid rgba(180, 66, 90, 0.22);
-  background: #fff7df;
+  border: 1px solid rgba(180, 66, 90, 0.2);
+  background: linear-gradient(135deg, #fffaf0, #ffe6dc);
   color: #9d4058;
 }
 
@@ -221,15 +233,36 @@ textarea:focus-visible,
 .map-card,
 .detail-panel,
 .content-section {
-  border: 1px solid rgba(92, 68, 47, 0.16);
+  border: 1px solid rgba(61, 48, 38, 0.13);
   border-radius: 18px;
-  background: rgba(255, 248, 230, 0.88);
+  background: rgba(255, 250, 240, 0.9);
   box-shadow: 0 16px 36px rgba(79, 53, 34, 0.1);
 }
 
 .stat-card {
   min-width: 0;
   padding: 16px;
+  background:
+    linear-gradient(135deg, rgba(255, 250, 240, 0.96), rgba(169, 214, 255, 0.2)),
+    var(--paper);
+}
+
+.stat-card:nth-child(2n) {
+  background:
+    linear-gradient(135deg, rgba(255, 250, 240, 0.96), rgba(168, 230, 195, 0.24)),
+    var(--paper);
+}
+
+.stat-card:nth-child(3n) {
+  background:
+    linear-gradient(135deg, rgba(255, 250, 240, 0.96), rgba(255, 230, 128, 0.26)),
+    var(--paper);
+}
+
+.stat-card:nth-child(4n) {
+  background:
+    linear-gradient(135deg, rgba(255, 250, 240, 0.96), rgba(199, 183, 255, 0.22)),
+    var(--paper);
 }
 
 .stat-card__icon {
@@ -239,8 +272,8 @@ textarea:focus-visible,
   margin-bottom: 12px;
   border-radius: 12px;
   place-items: center;
-  background: #87c9ff;
-  color: #fff8e9;
+  background: linear-gradient(135deg, var(--sky), var(--teal));
+  color: #26372f;
 }
 
 .stat-card p {
@@ -264,6 +297,9 @@ textarea:focus-visible,
   gap: 14px;
   margin-top: 12px;
   padding: 14px;
+  background:
+    linear-gradient(135deg, rgba(255, 250, 240, 0.95), rgba(142, 223, 210, 0.18)),
+    var(--paper);
 }
 
 .region-row {
@@ -292,7 +328,7 @@ textarea:focus-visible,
   display: block;
   height: 100%;
   border-radius: inherit;
-  background: linear-gradient(90deg, #87c9ff, #a8e6c3);
+  background: linear-gradient(90deg, #f26d7d 0%, #ffb36d 36%, #ffe680 64%, #85dcaa 100%);
 }
 
 .atlas-layout {
@@ -353,10 +389,11 @@ textarea:focus-visible,
 .map-shell {
   position: relative;
   overflow: hidden;
-  border: 3px solid #f6b86d;
+  border: 3px solid transparent;
   border-radius: 16px;
   background:
-    linear-gradient(rgba(255, 248, 230, 0.78), rgba(255, 248, 230, 0.78)),
+    linear-gradient(rgba(255, 250, 240, 0.78), rgba(255, 250, 240, 0.78)) padding-box,
+    linear-gradient(135deg, var(--peach), var(--sky), var(--mint)) border-box,
     linear-gradient(90deg, rgba(135, 201, 255, 0.15) 1px, transparent 1px),
     linear-gradient(rgba(135, 201, 255, 0.15) 1px, transparent 1px);
   background-size: auto, 48px 48px, 48px 48px;
@@ -378,37 +415,53 @@ textarea:focus-visible,
   bottom: 14px;
   z-index: 2;
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px;
+  grid-template-columns: 1fr;
+  gap: 9px;
 }
 
 .map-inset {
+  position: relative;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  min-width: 112px;
-  min-height: 78px;
-  padding: 8px 10px;
-  border: 2px solid rgba(45, 36, 30, 0.3);
-  border-radius: 14px;
+  grid-template-columns: minmax(0, 1fr) minmax(46px, auto);
+  min-width: 150px;
+  min-height: 92px;
+  padding: 9px 10px 8px;
+  overflow: hidden;
+  border: 2px solid rgba(61, 48, 38, 0.24);
+  border-radius: 16px;
   background:
-    linear-gradient(135deg, rgba(255, 248, 230, 0.9), rgba(169, 214, 255, 0.32)),
-    repeating-linear-gradient(45deg, rgba(45, 36, 30, 0.055) 0 1px, transparent 1px 7px);
-  color: #2d241e;
-  box-shadow: 0 10px 18px rgba(45, 36, 30, 0.14);
+    linear-gradient(135deg, rgba(255, 250, 240, 0.92), rgba(169, 214, 255, 0.3)),
+    repeating-linear-gradient(0deg, rgba(61, 48, 38, 0.045) 0 1px, transparent 1px 11px),
+    repeating-linear-gradient(90deg, rgba(61, 48, 38, 0.035) 0 1px, transparent 1px 11px);
+  color: var(--trail);
+  box-shadow: 0 12px 22px rgba(45, 36, 30, 0.14);
   text-align: left;
+}
+
+.map-inset::before {
+  position: absolute;
+  top: 8px;
+  right: 9px;
+  color: rgba(61, 48, 38, 0.5);
+  font-size: 0.56rem;
+  font-weight: 950;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  content: "Inset";
 }
 
 .map-inset:hover,
 .map-inset.is-selected {
-  border-color: #2d241e;
+  border-color: #b6425a;
   box-shadow:
-    0 0 0 3px rgba(242, 191, 69, 0.6),
+    0 0 0 3px rgba(247, 166, 184, 0.5),
     0 10px 18px rgba(45, 36, 30, 0.18);
 }
 
 .map-inset span {
   align-self: end;
-  font-size: 1.1rem;
+  color: #9d4058;
+  font-size: 1.28rem;
   font-weight: 950;
   line-height: 1;
 }
@@ -416,6 +469,7 @@ textarea:focus-visible,
 .map-inset small {
   align-self: end;
   justify-self: end;
+  color: var(--ink-muted);
   font-size: 0.72rem;
   font-weight: 900;
 }
@@ -423,17 +477,24 @@ textarea:focus-visible,
 .map-inset__shape {
   grid-column: 1 / -1;
   width: 100%;
-  height: 42px;
+  height: 52px;
   fill: var(--state-color);
-  stroke: #4f4430;
+  stroke: #3d3026;
   stroke-linecap: round;
   stroke-linejoin: round;
-  stroke-width: 2.4;
+  stroke-width: 2.6;
+  filter: drop-shadow(0 2px 0 rgba(255, 255, 255, 0.72));
 }
 
-.map-inset__islands {
+.map-inset__islands,
+.map-inset__cutline {
   fill: none;
   stroke-width: 3;
+}
+
+.map-inset__cutline {
+  opacity: 0.35;
+  stroke-width: 1.5;
 }
 
 .maplibre-atlas .maplibregl-canvas {
@@ -450,7 +511,7 @@ textarea:focus-visible,
 
 .map-card--central {
   background:
-    linear-gradient(180deg, rgba(255, 248, 230, 0.96), rgba(255, 229, 190, 0.82)),
+    linear-gradient(180deg, rgba(255, 250, 240, 0.96), rgba(169, 214, 255, 0.15) 48%, rgba(255, 179, 167, 0.18)),
     repeating-linear-gradient(45deg, rgba(86, 54, 34, 0.035) 0 1px, transparent 1px 9px);
 }
 
@@ -480,6 +541,18 @@ textarea:focus-visible,
 .detail-panel {
   position: sticky;
   top: 16px;
+  overflow: hidden;
+  background:
+    linear-gradient(180deg, rgba(255, 250, 240, 0.98), rgba(255, 230, 128, 0.14)),
+    var(--paper);
+}
+
+.detail-panel::before {
+  display: block;
+  height: 6px;
+  margin: -18px -18px 14px;
+  background: linear-gradient(90deg, var(--rose), var(--sky), var(--mint));
+  content: "";
 }
 
 .detail-panel--empty {
@@ -520,7 +593,7 @@ textarea:focus-visible,
 .detail-list div {
   padding: 12px;
   border-radius: 12px;
-  background: #fff0d6;
+  background: linear-gradient(135deg, #fff7e6, rgba(169, 214, 255, 0.18));
 }
 
 .detail-list dt {
@@ -542,7 +615,7 @@ textarea:focus-visible,
 }
 
 .badge-row span,
-.achievement span {
+.achievement__details span {
   display: inline-flex;
   width: max-content;
   max-width: 100%;
@@ -583,50 +656,94 @@ textarea:focus-visible,
 
 .achievement-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 10px;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 8px;
 }
 
 .achievement {
-  border: 1px solid rgba(92, 68, 47, 0.16);
-  border-radius: 14px;
-  background: #fff8e8;
-}
-
-.achievement {
-  display: flex;
-  gap: 10px;
-  padding: 12px;
-  opacity: 0.72;
+  min-width: 0;
+  border: 1px solid rgba(92, 68, 47, 0.14);
+  border-radius: 13px;
+  background: rgba(255, 250, 240, 0.84);
+  filter: grayscale(0.6);
+  opacity: 0.58;
 }
 
 .achievement--unlocked {
-  border-color: rgba(180, 66, 90, 0.28);
+  border-color: color-mix(in srgb, var(--achievement-accent) 62%, #3d3026 10%);
   background:
-    linear-gradient(135deg, rgba(255, 230, 128, 0.42), transparent),
-    #fff8e8;
+    linear-gradient(135deg, color-mix(in srgb, var(--achievement-accent) 35%, transparent), transparent 72%),
+    #fffaf0;
+  filter: none;
   opacity: 1;
+}
+
+.achievement--expanded {
+  grid-column: span 2;
+  box-shadow: 0 12px 22px rgba(61, 48, 38, 0.12);
+}
+
+.achievement__button {
+  display: grid;
+  grid-template-columns: 30px minmax(0, 1fr);
+  gap: 8px;
+  width: 100%;
+  min-height: 62px;
+  padding: 9px;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  text-align: left;
 }
 
 .achievement__icon {
   display: grid;
   flex: 0 0 auto;
-  width: 36px;
-  height: 36px;
+  width: 30px;
+  height: 30px;
   border-radius: 999px;
   place-items: center;
-  background: #88d9ad;
-  color: #fff8e9;
+  background: color-mix(in srgb, var(--achievement-accent, #a9d6ff) 85%, white 15%);
+  color: #3d3026;
 }
 
-.achievement h3 {
-  margin: 0 0 4px;
+.achievement__text {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
 }
 
-.achievement p {
-  margin: 0 0 10px;
+.achievement__text strong {
+  overflow: hidden;
+  font-size: 0.78rem;
+  font-weight: 950;
+  line-height: 1.1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.achievement__text small {
+  color: var(--ink-muted);
+  font-size: 0.68rem;
+  font-weight: 850;
+}
+
+.achievement__details {
+  display: grid;
+  gap: 8px;
+  padding: 0 10px 10px 47px;
+}
+
+.achievement__details p {
+  margin: 0;
   color: #665241;
-  font-size: 0.86rem;
+  font-size: 0.78rem;
+}
+
+.achievement__details span {
+  padding: 4px 8px;
+  background: color-mix(in srgb, var(--achievement-accent, #ffe680) 48%, white 52%);
+  font-size: 0.68rem;
 }
 
 .edit-form {
@@ -966,7 +1083,7 @@ textarea:focus-visible,
   }
 
   .achievement-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 }
 
@@ -976,9 +1093,10 @@ textarea:focus-visible,
   }
 
   .atlas-header {
+    position: relative;
     flex-direction: column;
-    gap: 12px;
-    padding: 14px;
+    gap: 8px;
+    padding: 12px 58px 12px 12px;
   }
 
   .atlas-header h1 {
@@ -987,12 +1105,15 @@ textarea:focus-visible,
   }
 
   .atlas-header p {
-    font-size: 0.92rem;
+    font-size: 0.86rem;
   }
 
   .atlas-header__actions {
-    align-items: flex-start;
-    width: 100%;
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    align-items: flex-end;
+    width: auto;
   }
 
   .stats-grid {
@@ -1000,11 +1121,14 @@ textarea:focus-visible,
   }
 
   .regional-progress,
-  .achievement-grid,
   .editor-tools,
   .form-grid,
   .checkbox-grid {
     grid-template-columns: 1fr;
+  }
+
+  .achievement-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .regional-progress {
@@ -1066,7 +1190,7 @@ textarea:focus-visible,
   }
 
   .atlas-header h1 {
-    font-size: 1.9rem;
+    font-size: 1.58rem;
   }
 
   .stats-grid {

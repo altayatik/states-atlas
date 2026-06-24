@@ -54,23 +54,55 @@ const stateFillOpacity = [
   0.94,
 ]
 
-const placeFillOpacity = [
+const placePinOpacity = [
   'case',
   ['boolean', ['get', 'selected'], false],
-  0.42,
-  ['boolean', ['get', 'visited'], false],
-  0.28,
-  0.16,
+  1,
+  ['boolean', ['get', 'stateSelected'], false],
+  0.96,
+  ['interpolate', ['linear'], ['zoom'], 3.75, 0, 4.35, 0.92],
 ]
 
-const placeLineWidth = [
+const placeLabelOpacity = [
   'case',
   ['boolean', ['get', 'selected'], false],
-  2.4,
-  ['boolean', ['get', 'visited'], false],
-  1.7,
-  1.1,
+  1,
+  ['interpolate', ['linear'], ['zoom'], 5.15, 0, 5.75, 0.95],
 ]
+
+function getGeometryCoordinates(geometry) {
+  if (!geometry) return []
+  if (geometry.type === 'Point') return [geometry.coordinates]
+  if (geometry.type === 'Polygon') return geometry.coordinates.flat()
+  if (geometry.type === 'MultiPolygon') return geometry.coordinates.flat(2)
+  return []
+}
+
+function getGeometryCenter(geometry) {
+  const coordinates = getGeometryCoordinates(geometry).filter((coordinate) => (
+    Array.isArray(coordinate)
+    && Number.isFinite(coordinate[0])
+    && Number.isFinite(coordinate[1])
+  ))
+  if (!coordinates.length) return null
+
+  const bounds = coordinates.reduce((acc, [lng, lat]) => ({
+    minLng: Math.min(acc.minLng, lng),
+    maxLng: Math.max(acc.maxLng, lng),
+    minLat: Math.min(acc.minLat, lat),
+    maxLat: Math.max(acc.maxLat, lat),
+  }), {
+    minLng: Number.POSITIVE_INFINITY,
+    maxLng: Number.NEGATIVE_INFINITY,
+    minLat: Number.POSITIVE_INFINITY,
+    maxLat: Number.NEGATIVE_INFINITY,
+  })
+
+  return [
+    (bounds.minLng + bounds.maxLng) / 2,
+    (bounds.minLat + bounds.maxLat) / 2,
+  ]
+}
 
 function prefersReducedMotion() {
   return window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
@@ -86,19 +118,22 @@ function fitDefaultBounds(map) {
 function InsetSilhouette({ code }) {
   if (code === 'HI') {
     return (
-      <svg aria-hidden="true" className="map-inset__shape" viewBox="0 0 120 70">
-        <ellipse cx="24" cy="30" rx="7" ry="4" transform="rotate(-18 24 30)" />
-        <ellipse cx="43" cy="37" rx="9" ry="5" transform="rotate(-15 43 37)" />
-        <ellipse cx="64" cy="43" rx="12" ry="6" transform="rotate(-12 64 43)" />
-        <ellipse cx="92" cy="50" rx="17" ry="8" transform="rotate(-10 92 50)" />
+      <svg aria-hidden="true" className="map-inset__shape map-inset__shape--hi" viewBox="0 0 140 82">
+        <path d="M18 27 C24 21 34 21 39 27 C36 32 26 34 18 27 Z" />
+        <path d="M45 35 C54 29 66 32 70 39 C63 45 51 43 45 35 Z" />
+        <path d="M73 45 C83 38 98 41 104 50 C96 59 81 56 73 45 Z" />
+        <path d="M108 56 C119 48 134 53 137 64 C126 73 112 68 108 56 Z" />
+        <circle cx="33" cy="48" r="3.2" />
+        <circle cx="60" cy="55" r="2.8" />
       </svg>
     )
   }
 
   return (
-    <svg aria-hidden="true" className="map-inset__shape" viewBox="0 0 120 70">
-      <path d="M17 36 L30 17 L57 12 L82 19 L101 31 L91 45 L62 50 L44 43 L31 57 L21 50 Z" />
-      <path className="map-inset__islands" d="M37 58 L48 61 L59 62 M66 62 L75 64 M83 63 L94 65 M101 63 L110 64" />
+    <svg aria-hidden="true" className="map-inset__shape map-inset__shape--ak" viewBox="0 0 140 82">
+      <path d="M14 44 L26 24 L51 13 L74 14 L93 24 L119 29 L126 42 L113 52 L88 55 L68 50 L55 58 L38 69 L28 61 L20 65 L15 56 Z" />
+      <path className="map-inset__islands" d="M49 67 C59 69 67 70 75 72 M82 72 C89 74 95 75 101 75 M108 73 C116 75 123 75 131 74" />
+      <path className="map-inset__cutline" d="M26 25 C45 35 68 33 90 24" />
     </svg>
   )
 }
@@ -154,7 +189,10 @@ export function TravelMap({
     features: metros.map((metro) => {
       const selected = selectedPlaceType === 'metro' && selectedPlaceId === metro.id
       const visited = isMetroVisited(metro, states)
+      const stateSelected = metro.stateCodes?.includes(selectedStateCode)
+      const center = getGeometryCenter(metro.geometry)
       if (!selected && !visited) return null
+      if (!center) return null
 
       return {
         type: 'Feature',
@@ -164,19 +202,26 @@ export function TravelMap({
           kind: 'metro',
           name: metro.name,
           selected,
+          stateSelected,
           visited,
         },
-        geometry: metro.geometry,
+        geometry: {
+          type: 'Point',
+          coordinates: center,
+        },
       }
     }).filter(Boolean),
-  }), [metros, selectedPlaceId, selectedPlaceType, states])
+  }), [metros, selectedPlaceId, selectedPlaceType, selectedStateCode, states])
 
   const parksGeoJson = useMemo(() => ({
     type: 'FeatureCollection',
     features: parks.map((park) => {
       const selected = selectedPlaceType === 'park' && selectedPlaceId === park.id
       const visited = isParkVisited(park, states)
+      const stateSelected = park.stateCodes?.includes(selectedStateCode)
+      const center = getGeometryCenter(park.geometry)
       if (!selected && !visited) return null
+      if (!center) return null
 
       return {
         type: 'Feature',
@@ -186,12 +231,16 @@ export function TravelMap({
           kind: 'park',
           name: park.name,
           selected,
+          stateSelected,
           visited,
         },
-        geometry: park.geometry,
+        geometry: {
+          type: 'Point',
+          coordinates: center,
+        },
       }
     }).filter(Boolean),
-  }), [parks, selectedPlaceId, selectedPlaceType, states])
+  }), [parks, selectedPlaceId, selectedPlaceType, selectedStateCode, states])
 
   useEffect(() => {
     latestMapDataRef.current = {
@@ -262,62 +311,119 @@ export function TravelMap({
       })
 
       map.addLayer({
-        id: 'metros-fill',
-        type: 'fill',
+        id: 'metros-pin',
+        type: 'circle',
         source: 'metros',
-        minzoom: 4,
         paint: {
-          'fill-color': '#87c9ff',
-          'fill-opacity': placeFillOpacity,
-        },
-      })
-
-      map.addLayer({
-        id: 'metros-line',
-        type: 'line',
-        source: 'metros',
-        minzoom: 4,
-        paint: {
-          'line-color': '#3d7d96',
-          'line-opacity': [
+          'circle-color': [
             'case',
             ['boolean', ['get', 'selected'], false],
-            0.92,
-            ['boolean', ['get', 'visited'], false],
-            0.7,
-            0.42,
+            '#ff8f85',
+            '#76c8ff',
           ],
-          'line-width': placeLineWidth,
-        },
-      })
-
-      map.addLayer({
-        id: 'parks-fill',
-        type: 'fill',
-        source: 'parks',
-        minzoom: 4.5,
-        paint: {
-          'fill-color': '#a8e6c3',
-          'fill-opacity': placeFillOpacity,
-        },
-      })
-
-      map.addLayer({
-        id: 'parks-line',
-        type: 'line',
-        source: 'parks',
-        minzoom: 4.5,
-        paint: {
-          'line-color': '#4f9a70',
-          'line-opacity': [
+          'circle-opacity': placePinOpacity,
+          'circle-radius': [
             'case',
             ['boolean', ['get', 'selected'], false],
-            0.95,
-            ['boolean', ['get', 'visited'], false],
-            0.75,
-            0.48,
+            8,
+            ['boolean', ['get', 'stateSelected'], false],
+            6.8,
+            ['interpolate', ['linear'], ['zoom'], 4, 4.2, 7, 6.8],
           ],
-          'line-width': placeLineWidth,
+          'circle-stroke-color': '#fffaf0',
+          'circle-stroke-opacity': placePinOpacity,
+          'circle-stroke-width': 2.2,
+        },
+      })
+
+      map.addLayer({
+        id: 'parks-pin',
+        type: 'circle',
+        source: 'parks',
+        paint: {
+          'circle-color': [
+            'case',
+            ['boolean', ['get', 'selected'], false],
+            '#6bd6a1',
+            '#a8e6c3',
+          ],
+          'circle-opacity': placePinOpacity,
+          'circle-radius': [
+            'case',
+            ['boolean', ['get', 'selected'], false],
+            9,
+            ['boolean', ['get', 'stateSelected'], false],
+            7.2,
+            ['interpolate', ['linear'], ['zoom'], 4.2, 4.5, 7, 7.5],
+          ],
+          'circle-stroke-color': '#32694b',
+          'circle-stroke-opacity': placePinOpacity,
+          'circle-stroke-width': 1.9,
+        },
+      })
+
+      map.addLayer({
+        id: 'parks-pin-icon',
+        type: 'symbol',
+        source: 'parks',
+        layout: {
+          'text-allow-overlap': true,
+          'text-field': '▲',
+          'text-ignore-placement': true,
+          'text-size': [
+            'case',
+            ['boolean', ['get', 'selected'], false],
+            11,
+            9,
+          ],
+        },
+        paint: {
+          'text-color': '#32694b',
+          'text-opacity': placePinOpacity,
+        },
+      })
+
+      map.addLayer({
+        id: 'metros-label',
+        type: 'symbol',
+        source: 'metros',
+        minzoom: 5.2,
+        layout: {
+          'text-allow-overlap': false,
+          'text-anchor': 'top',
+          'text-field': ['get', 'name'],
+          'text-ignore-placement': false,
+          'text-offset': [0, 0.9],
+          'text-optional': true,
+          'text-size': ['interpolate', ['linear'], ['zoom'], 5.2, 11, 7, 12.5],
+        },
+        paint: {
+          'text-color': '#24556d',
+          'text-halo-color': '#fffaf0',
+          'text-halo-width': 1.4,
+          'text-opacity': placeLabelOpacity,
+        },
+      })
+
+      map.addLayer({
+        id: 'parks-label',
+        type: 'symbol',
+        source: 'parks',
+        minzoom: 5.7,
+        layout: {
+          'text-allow-overlap': false,
+          'text-anchor': 'top',
+          'text-field': ['get', 'name'],
+          'text-ignore-placement': false,
+          'text-offset': [0, 0.95],
+          'text-optional': true,
+          'text-size': ['interpolate', ['linear'], ['zoom'], 5.7, 10.5, 7.4, 12],
+        },
+        paint: {
+          'text-color': '#32694b',
+          'text-halo-color': '#fffaf0',
+          'text-halo-width': 1.4,
+          'text-opacity': placeLabelOpacity,
         },
       })
 
@@ -343,13 +449,13 @@ export function TravelMap({
         },
       })
 
-      map.on('click', 'metros-fill', (event) => {
+      map.on('click', 'metros-pin', (event) => {
         const id = event.features?.[0]?.properties?.id
         const metro = latestMapDataRef.current.metros.find((item) => item.id === id)
         if (metro) latestMapDataRef.current.onSelectMetro?.(metro)
       })
 
-      map.on('click', 'parks-fill', (event) => {
+      map.on('click', 'parks-pin', (event) => {
         const id = event.features?.[0]?.properties?.id
         const park = latestMapDataRef.current.parks.find((item) => item.id === id)
         if (park) latestMapDataRef.current.onSelectPark?.(park)
@@ -357,7 +463,7 @@ export function TravelMap({
 
       map.on('click', 'states-fill', (event) => {
         const placeFeatures = map.queryRenderedFeatures(event.point, {
-          layers: ['metros-fill', 'parks-fill'],
+          layers: ['metros-pin', 'parks-pin', 'parks-pin-icon'],
         })
         if (placeFeatures.length) return
 
@@ -370,7 +476,7 @@ export function TravelMap({
         if (code) setHoveredStateCode(code)
       })
 
-      ;['states-fill', 'metros-fill', 'parks-fill'].forEach((layerId) => {
+      ;['states-fill', 'metros-pin', 'parks-pin', 'parks-pin-icon'].forEach((layerId) => {
         map.on('mouseenter', layerId, () => {
           map.getCanvas().style.cursor = 'pointer'
         })
@@ -381,7 +487,7 @@ export function TravelMap({
         map.getCanvas().style.cursor = ''
       })
 
-      ;['metros-fill', 'parks-fill'].forEach((layerId) => {
+      ;['metros-pin', 'parks-pin', 'parks-pin-icon'].forEach((layerId) => {
         map.on('mouseleave', layerId, () => {
           map.getCanvas().style.cursor = ''
         })
