@@ -2,12 +2,12 @@ import { Flag, Heart, MapPin, Mountain, Star, TentTree, Trophy } from 'lucide-re
 import { formatPercent } from '../utils/formatters'
 
 const statConfig = [
-  ['statesVisited', 'States visited', Flag],
-  ['statesStayed', 'Stayed overnight', TentTree],
-  ['favorites', 'Favorites', Heart],
-  ['citiesLogged', 'Cities logged', MapPin],
-  ['parksMarked', 'Parks marked', Mountain],
-  ['completionPercent', 'Completion', Trophy],
+  ['statesVisited', 'States visited', Flag, '#8fbf9a', '#2f6f4f'],
+  ['statesStayed', 'Stayed overnight', TentTree, '#a9d6ff', '#245f7a'],
+  ['favorites', 'Favorites', Heart, '#ffe680', '#80651d'],
+  ['citiesLogged', 'Cities logged', MapPin, '#d99a70', '#75462f'],
+  ['parksMarked', 'Parks marked', Mountain, '#a8e6c3', '#2f7a57'],
+  ['completionPercent', 'Completion', Trophy, '#c7b7ff', '#4f4486'],
 ]
 
 function getProgressColor(percent) {
@@ -22,7 +22,7 @@ export function StatsCards({ stats, regions }) {
   return (
     <section className="stats-section" aria-label="Travel progress">
       <div className="stats-grid">
-        {statConfig.map(([key, label, Icon]) => {
+        {statConfig.map(([key, label, Icon, accent, ink]) => {
           const value =
             key === 'statesVisited'
               ? `${stats.statesVisited}/${stats.statesTotal}`
@@ -31,7 +31,7 @@ export function StatsCards({ stats, regions }) {
                 : stats[key]
 
           return (
-            <article className="stat-card" key={key}>
+            <article className="stat-card" key={key} style={{ '--stat-accent': accent, '--stat-ink': ink }}>
               <div className="stat-card__icon">
                 <Icon size={20} aria-hidden="true" />
               </div>
@@ -40,7 +40,7 @@ export function StatsCards({ stats, regions }) {
             </article>
           )
         })}
-        <article className="stat-card stat-card--wide">
+        <article className="stat-card stat-card--wide" style={{ '--stat-accent': '#f0b36f', '--stat-ink': '#7a4b24' }}>
           <div className="stat-card__icon">
             <Star size={20} aria-hidden="true" />
           </div>
