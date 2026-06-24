@@ -10,6 +10,14 @@ const statConfig = [
   ['completionPercent', 'Completion', Trophy],
 ]
 
+function getProgressColor(percent) {
+  if (percent <= 20) return '#d78a83'
+  if (percent <= 40) return '#c9825d'
+  if (percent <= 65) return '#d8b84f'
+  if (percent <= 85) return '#89cda7'
+  return '#5fa77d'
+}
+
 export function StatsCards({ stats, regions }) {
   return (
     <section className="stats-section" aria-label="Travel progress">
@@ -46,7 +54,7 @@ export function StatsCards({ stats, regions }) {
           <div className="region-row" key={region.region}>
             <span>{region.region}</span>
             <div className="region-row__track" aria-hidden="true">
-              <span style={{ width: `${region.percent}%` }} />
+              <span style={{ '--progress-color': getProgressColor(region.percent), width: `${region.percent}%` }} />
             </div>
             <strong>
               {region.visited}/{region.total}

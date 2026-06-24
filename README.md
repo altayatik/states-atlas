@@ -36,7 +36,7 @@ The current editor route is deployed inside the same app at `/states/#/edit`. To
 
 The public header includes a small icon-only wrench link to `/states/#/edit`. The editor is still protected by the Supabase secret phrase gate.
 
-The public `/states/` page is intentionally simple: header, compact stats, central map, selected detail panel, and compact expandable achievements. City/metro and national park map display uses pins rather than boundary outlines. Pins are hidden at the default view and appear only after zooming in or when the related state is selected. Labels stay off at default zoom.
+The public `/states/` page is intentionally simple: header, compact stats, central map, selected detail panel, and compact expandable achievements. City/metro and national park map display uses pins rather than boundary outlines. Pins are hidden at the default view and appear only after zooming in or when the related state is selected. Labels stay off at default zoom and use compact masked pills when visible.
 
 City and park editor options are powered by `src/data/stateTravelOptions.js`. Those options are curated travel starters, not exhaustive city lists. National park options include official "National Park" units only, not every NPS-managed site. States with no official national parks show a friendly empty message in the editor.
 
@@ -215,7 +215,7 @@ If Supabase env vars exist, public reads come from Supabase and writes go throug
 
 The editor uses a dropdown-first workflow: choose one state and edit that state inline. Changes autosave when closing the editor form, switching to another state, or returning to the public atlas. City and national park selections are stored as arrays in `cities_visited` and `parks_visited`; the frontend maps those to `citiesVisited` and `parksVisited`.
 
-City and national park selections are editable and shown textually in the selected state detail panel. Existing city/park geometry is simplified visual data, not official boundaries, and only some selected cities/parks have local coordinates today. Their public map markers are subtle zoom/selection-aware pins, and clicked pins update the selected detail panel without adding default-view label clutter. Alaska and Hawaii are represented as atlas-style clickable SVG mini-map insets so they remain clean, recognizable, selectable, and status-colored without distorted geometry.
+City and national park selections are editable and shown textually in the selected state detail panel. Existing city/park geometry is simplified visual data, not official boundaries, and only some selected cities/parks have local coordinates today. Their public map markers are subtle zoom/selection-aware pins, and clicked pins update the selected detail panel without adding default-view label clutter. Alaska and Hawaii are represented as atlas-style clickable SVG mini-map insets so they remain clean, recognizable, selectable, and status-colored without distorted geometry. Regional progress bars use one threshold color based on completion level rather than rainbow gradients.
 
 ## Security Model
 

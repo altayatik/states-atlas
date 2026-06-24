@@ -28,5 +28,6 @@
 - The curated city dropdown data is not exhaustive. It is meant as a practical travel starter list.
 - National park dropdown data includes official "National Park" units only, not every NPS unit.
 - City/park pins are intentionally subtle and zoom-dependent. Labels remain hidden at default zoom to avoid overlap.
+- Visible city/park pin labels use masked pills, but dense clusters can still overlap at some zoom levels.
 - Alaska and Hawaii use simplified clickable inset mini maps rather than full geographic placement.
 - Long badge/city/park lists are functional and mobile-safe, but could be made more elegant with a custom compact picker later.
