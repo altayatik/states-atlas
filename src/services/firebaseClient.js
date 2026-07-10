@@ -1,6 +1,6 @@
 import { initializeApp } from 'firebase/app'
+import { getAuth } from 'firebase/auth'
 import { getFirestore } from 'firebase/firestore'
-import { getFunctions } from 'firebase/functions'
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -19,8 +19,8 @@ export const isFirebaseConfigured = Boolean(
 )
 
 let app
+let auth
 let db
-let functions
 
 export function getFirebaseApp() {
   if (!isFirebaseConfigured) return null
@@ -34,13 +34,8 @@ export function getFirebaseDb() {
   return db
 }
 
-export function getFirebaseFunctions() {
+export function getFirebaseAuth() {
   if (!isFirebaseConfigured) return null
-  if (!functions) {
-    functions = getFunctions(
-      getFirebaseApp(),
-      import.meta.env.VITE_FIREBASE_FUNCTIONS_REGION || 'us-central1',
-    )
-  }
-  return functions
+  if (!auth) auth = getAuth(getFirebaseApp())
+  return auth
 }

@@ -17,6 +17,7 @@ dist-ssr
 *service-account*.json
 firebase-debug.log
 firebase-debug.*.log
+.firebase/
 migration-backups/
 .supabase
 supabase/.branches

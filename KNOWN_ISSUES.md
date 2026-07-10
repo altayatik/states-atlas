@@ -1,6 +1,6 @@
 # Known Issues
 
-- Firebase migration is wired in source, but Firestore rules/functions must be deployed before the editor can write.
+- Editing now uses Firebase Auth and Firestore rules on the Spark/free plan; Google sign-in must be enabled in Firebase Console before editor login works.
 - Supabase backup JSON files are local and ignored. Keep a copy until Firebase import is verified.
 - City/park pins only appear for selected places that have local coordinates.
 - Existing city/park coordinate data are approximate and not official boundaries.

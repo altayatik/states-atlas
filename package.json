@@ -7,7 +7,7 @@
     "dev": "vite",
     "predeploy": "npm run build",
     "deploy": "gh-pages -d dist -r https://github.com/altayatik/atlas.git",
-    "build": "vite build",
+    "build": "vite build && node scripts/prepare-firebase-hosting.mjs",
     "lint": "oxlint",
     "preview": "vite preview"
   },

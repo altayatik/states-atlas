@@ -1,12 +1,17 @@
-import { collection, getDocs } from 'firebase/firestore'
-import { httpsCallable } from 'firebase/functions'
-import { getFirebaseDb, getFirebaseFunctions, isFirebaseConfigured } from './firebaseClient'
+import {
+  addDoc,
+  collection,
+  deleteDoc,
+  doc,
+  getDocs,
+  serverTimestamp,
+  setDoc,
+} from 'firebase/firestore'
+import { getFirebaseDb, isFirebaseConfigured } from './firebaseClient'
 import { getOfficialParkByName, getOfficialParkCountry } from '../data/nationalParks'
 import { normalizeScores, sortRankings } from '../utils/parkScoring'
 
-const PARK_ADMIN_TOKEN_KEY = 'travelAtlasParkAdminToken'
 const RANKINGS_COLLECTION = 'parkRankings'
-const ADMIN_FUNCTION = 'parksAdmin'
 
 export const isParksFirebaseConfigured = isFirebaseConfigured
 
@@ -65,30 +70,14 @@ function toDatabaseRanking(ranking) {
   }
 }
 
-function getCallable() {
-  const functions = getFirebaseFunctions()
-  if (!functions) return null
-  return httpsCallable(functions, ADMIN_FUNCTION)
-}
-
-function getCallableStatus(error) {
+function getFirestoreWriteError(error) {
   const code = error?.code || ''
-  return code.includes('unauthenticated') || code.includes('permission-denied') ? 401 : 500
-}
-
-export function getStoredParkAdminToken() {
-  if (typeof window === 'undefined') return ''
-  return window.sessionStorage.getItem(PARK_ADMIN_TOKEN_KEY) || ''
-}
-
-export function storeParkAdminToken(token) {
-  if (typeof window === 'undefined' || !token) return
-  window.sessionStorage.setItem(PARK_ADMIN_TOKEN_KEY, token)
-}
-
-export function clearParkAdminToken() {
-  if (typeof window === 'undefined') return
-  window.sessionStorage.removeItem(PARK_ADMIN_TOKEN_KEY)
+  const message = code.includes('permission-denied')
+    ? 'This account is not allowed to edit this atlas.'
+    : (error.message || 'The park rankings request failed.')
+  const nextError = new Error(message)
+  nextError.status = code.includes('permission-denied') ? 403 : 500
+  return nextError
 }
 
 export async function fetchParkRankings() {
@@ -103,54 +92,64 @@ export async function fetchParkRankings() {
   })))
 }
 
-async function mutateParkRanking(action, body, auth = {}) {
+async function saveParkRanking(id, ranking) {
   if (!isFirebaseConfigured) {
     throw new Error('Shared park rankings are not configured.')
   }
 
-  const callAdmin = getCallable()
-  if (!callAdmin) {
+  try {
+    const db = getFirebaseDb()
+    const databaseRanking = toDatabaseRanking(ranking)
+
+    if (id) {
+      await setDoc(doc(db, RANKINGS_COLLECTION, id), {
+        ...databaseRanking,
+        updated_at: serverTimestamp(),
+      }, { merge: true })
+
+      return {
+        ranking: {
+          id,
+          ...databaseRanking,
+        },
+      }
+    }
+
+    const ref = await addDoc(collection(db, RANKINGS_COLLECTION), {
+      ...databaseRanking,
+      created_at: serverTimestamp(),
+      updated_at: serverTimestamp(),
+    })
+
+    return {
+      ranking: {
+        id: ref.id,
+        ...databaseRanking,
+      },
+    }
+  } catch (error) {
+    throw getFirestoreWriteError(error)
+  }
+}
+
+export async function createParkRanking(ranking) {
+  const payload = await saveParkRanking('', ranking)
+  return toParkRanking(payload.ranking)
+}
+
+export async function updateParkRanking(id, ranking) {
+  const payload = await saveParkRanking(id, ranking)
+  return toParkRanking(payload.ranking)
+}
+
+export async function deleteParkRanking(id) {
+  if (!isFirebaseConfigured) {
     throw new Error('Shared park rankings are not configured.')
   }
 
   try {
-    const result = await callAdmin({
-      action,
-      adminToken: auth.adminToken || getStoredParkAdminToken() || undefined,
-      secretPhrase: auth.secretPhrase || undefined,
-      ...body,
-    })
-
-    if (result.data?.adminToken) {
-      storeParkAdminToken(result.data.adminToken)
-    }
-
-    return result.data
+    await deleteDoc(doc(getFirebaseDb(), RANKINGS_COLLECTION, id))
   } catch (error) {
-    const status = getCallableStatus(error)
-    const nextError = new Error(status === 401 ? 'That secret phrase doesn’t match. Try again.' : (error.message || 'The park rankings request failed.'))
-    nextError.status = status
-    throw nextError
+    throw getFirestoreWriteError(error)
   }
-}
-
-export async function createParkRanking(ranking, auth) {
-  const payload = await mutateParkRanking('create', {
-    ranking: toDatabaseRanking(ranking),
-  }, auth)
-
-  return toParkRanking(payload.ranking)
-}
-
-export async function updateParkRanking(id, ranking, auth) {
-  const payload = await mutateParkRanking('update', {
-    id,
-    ranking: toDatabaseRanking(ranking),
-  }, auth)
-
-  return toParkRanking(payload.ranking)
-}
-
-export async function deleteParkRanking(id, auth) {
-  await mutateParkRanking('delete', { id }, auth)
 }

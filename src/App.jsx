@@ -5,7 +5,7 @@ import { TravelMap } from './components/TravelMap'
 import { StateDetailPanel } from './components/StateDetailPanel'
 import { Achievements } from './components/Achievements'
 import { AtlasEditor } from './components/AtlasEditor'
-import { PasswordGate } from './components/PasswordGate'
+import { EditorAuthGate } from './components/EditorAuthGate'
 import { NationalParksEditor } from './components/NationalParksEditor'
 import { NationalParksSection } from './components/NationalParksSection'
 import { TravelNav } from './components/TravelNav'
@@ -17,22 +17,22 @@ import { getRegionalProgress, getStats } from './utils/stats'
 import { isPlaceOptionSelected } from './utils/places'
 import { mergeStoredStates } from './utils/storage'
 import {
-  clearAdminToken,
   fetchStateTravelEntries,
-  getStoredAdminToken,
   isFirebaseConfigured,
-  storeAdminToken,
   upsertStateTravelEntry,
-  validateEditorAccess,
 } from './services/stateTravelApi'
 import {
-  clearParkAdminToken,
   createParkRanking,
   deleteParkRanking,
   fetchParkRankings,
-  getStoredParkAdminToken,
   updateParkRanking,
 } from './services/parksApi'
+import {
+  isAtlasAdmin,
+  signInToEditor,
+  signOutOfEditor,
+  subscribeEditorAuth,
+} from './services/editorAuth'
 import './styles.css'
 
 function getParkMarkerForRanking(ranking) {
@@ -120,9 +120,9 @@ function App() {
   const [activeSection, setActiveSection] = useState(getActiveSection)
   const [activeParkScope, setActiveParkScope] = useState(getActiveParkScope)
   const [activeEditorSection, setActiveEditorSection] = useState(getActiveEditorSection)
-  const [isEditorUnlocked, setIsEditorUnlocked] = useState(false)
-  const [isCheckingEditorToken, setIsCheckingEditorToken] = useState(false)
-  const [editorSecretPhrase, setEditorSecretPhrase] = useState('')
+  const [editorUser, setEditorUser] = useState(null)
+  const [isCheckingEditorAuth, setIsCheckingEditorAuth] = useState(true)
+  const [isSigningIn, setIsSigningIn] = useState(false)
   const [gateError, setGateError] = useState('')
   const [selectedPlace, setSelectedPlace] = useState(null)
 
@@ -140,6 +140,15 @@ function App() {
       window.removeEventListener('hashchange', updateRoute)
       window.removeEventListener('popstate', updateRoute)
     }
+  }, [])
+
+  useEffect(() => {
+    setIsCheckingEditorAuth(true)
+    return subscribeEditorAuth((user) => {
+      setEditorUser(user)
+      setGateError('')
+      setIsCheckingEditorAuth(false)
+    })
   }, [])
 
   useEffect(() => {
@@ -225,104 +234,41 @@ function App() {
   }
 
   const persistState = async (draft) => {
-    try {
-      const result = await upsertStateTravelEntry(draft, {
-        adminToken: getStoredAdminToken(),
-      })
+    await upsertStateTravelEntry(draft)
 
-      if (result.adminToken) {
-        storeAdminToken(result.adminToken)
-      }
-
-      if (isFirebaseConfigured) {
-        await refreshEntries()
-      } else {
-        setStates((current) => current.map((state) => (state.code === draft.code ? draft : state)))
-      }
-
-      setSelectedStateCode(draft.code)
-      return draft
-    } catch (error) {
-      if (error.status === 401) {
-        clearAdminToken()
-        clearParkAdminToken()
-        setIsEditorUnlocked(false)
-        setEditorSecretPhrase('')
-        setGateError('That secret phrase doesn’t match. Try again.')
-      }
-
-      throw error
+    if (isFirebaseConfigured) {
+      await refreshEntries()
+    } else {
+      setStates((current) => current.map((state) => (state.code === draft.code ? draft : state)))
     }
+
+    setSelectedStateCode(draft.code)
+    return draft
   }
 
-  const unlockEditor = async (secretPhrase) => {
+  const handleEditorSignIn = async () => {
     setGateError('')
+    setIsSigningIn(true)
 
     try {
-      const result = await validateEditorAccess({ secretPhrase })
-      if (!result.ok || !result.adminToken) {
-        setGateError(result.message || 'That secret phrase doesn’t match. Try again.')
-        return
-      }
-
-      storeAdminToken(result.adminToken)
-      setEditorSecretPhrase(secretPhrase.trim())
-
-      setIsEditorUnlocked(true)
+      await signInToEditor()
     } catch (error) {
-      clearAdminToken()
-      clearParkAdminToken()
-      setEditorSecretPhrase('')
-      setGateError(error.status === 401
-        ? 'That secret phrase doesn’t match. Try again.'
-        : 'Editor unlock is not configured yet. Check the Firebase function and secrets.')
+      setGateError(error.message || 'Couldn’t sign in with Google.')
+    } finally {
+      setIsSigningIn(false)
     }
   }
 
-  useEffect(() => {
-    if (!isEditorRoute || isEditorUnlocked) return undefined
-
-    const token = getStoredAdminToken()
-    if (!token) return undefined
-
-    let isMounted = true
-    setIsCheckingEditorToken(true)
-
-    validateEditorAccess({ adminToken: token })
-      .then((result) => {
-        if (!isMounted) return
-        if (result.ok && result.adminToken) {
-          storeAdminToken(result.adminToken)
-          setIsEditorUnlocked(true)
-        } else {
-          clearAdminToken()
-          clearParkAdminToken()
-        }
-      })
-      .catch(() => {
-        if (!isMounted) return
-        clearAdminToken()
-        clearParkAdminToken()
-      })
-      .finally(() => {
-        if (isMounted) setIsCheckingEditorToken(false)
-      })
-
-    return () => {
-      isMounted = false
-    }
-  }, [isEditorRoute, isEditorUnlocked])
+  const handleEditorSignOut = async () => {
+    setGateError('')
+    await signOutOfEditor()
+  }
 
   const refreshParkRankings = async () => {
     const rankings = await fetchParkRankings()
     setParkRankings(rankings)
     return rankings
   }
-
-  const getParkAuth = () => ({
-    adminToken: getStoredParkAdminToken() || getStoredAdminToken(),
-    secretPhrase: editorSecretPhrase || undefined,
-  })
 
   const syncParkRankingToStates = async (ranking) => {
     const marker = getParkMarkerForRanking(ranking)
@@ -337,55 +283,27 @@ function App() {
         ...state,
         parksVisited: uniquePlaces([...(state.parksVisited ?? []), marker.name]),
         updatedAt: new Date().toISOString(),
-      }, {
-        adminToken: getStoredAdminToken(),
       })
     }))
   }
 
   const persistParkRanking = async (draft) => {
-    try {
-      const savedRanking = draft.id
-        ? await updateParkRanking(draft.id, draft, getParkAuth())
-        : await createParkRanking(draft, getParkAuth())
+    const savedRanking = draft.id
+      ? await updateParkRanking(draft.id, draft)
+      : await createParkRanking(draft)
 
-      await syncParkRankingToStates(savedRanking)
-      await refreshParkRankings()
-      await refreshEntries()
-      return savedRanking
-    } catch (error) {
-      if (error.status === 401) {
-        clearParkAdminToken()
-        if (!editorSecretPhrase) {
-          clearAdminToken()
-          setIsEditorUnlocked(false)
-          setGateError('Your edit session expired. Unlock the editor again.')
-        }
-      }
-
-      throw error
-    }
+    await syncParkRankingToStates(savedRanking)
+    await refreshParkRankings()
+    await refreshEntries()
+    return savedRanking
   }
 
   const removeParkRanking = async (rankingId) => {
-    try {
-      await deleteParkRanking(rankingId, getParkAuth())
-      await refreshParkRankings()
-    } catch (error) {
-      if (error.status === 401) {
-        clearParkAdminToken()
-        if (!editorSecretPhrase) {
-          clearAdminToken()
-          setIsEditorUnlocked(false)
-          setGateError('Your edit session expired. Unlock the editor again.')
-        }
-      }
-
-      throw error
-    }
+    await deleteParkRanking(rankingId)
+    await refreshParkRankings()
   }
 
-  if (isEditorRoute && isCheckingEditorToken) {
+  if (isEditorRoute && isCheckingEditorAuth) {
     return (
       <div className="app-shell app-shell--editor">
         <div className="sync-banner">Checking editor access...</div>
@@ -393,10 +311,17 @@ function App() {
     )
   }
 
-  if (isEditorRoute && !isEditorUnlocked) {
+  if (isEditorRoute && !isAtlasAdmin(editorUser)) {
     return (
       <div className="app-shell app-shell--editor">
-        <PasswordGate error={gateError} onBack={goPublic} onSubmit={unlockEditor} />
+        <EditorAuthGate
+          error={gateError}
+          isSigningIn={isSigningIn}
+          onBack={goPublic}
+          onSignIn={handleEditorSignIn}
+          onSignOut={handleEditorSignOut}
+          user={editorUser}
+        />
       </div>
     )
   }
@@ -414,6 +339,9 @@ function App() {
             </div>
             <button className="button button--secondary" type="button" onClick={goPublic}>
               Back to public atlas
+            </button>
+            <button className="button button--secondary" type="button" onClick={handleEditorSignOut}>
+              Sign out
             </button>
           </header>
 

@@ -1379,10 +1379,27 @@ textarea:focus-visible,
   font-weight: 800;
 }
 
+.signed-in-card {
+  display: grid;
+  gap: 4px;
+  margin: 18px 0 0;
+  padding: 12px 14px;
+  border: 1px solid rgba(47, 74, 104, 0.18);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.56);
+  color: #5c6f82;
+  font-weight: 800;
+}
+
+.signed-in-card strong {
+  color: var(--heading-blue);
+}
+
 .gate-actions {
   display: flex;
   flex-wrap: wrap;
   gap: 10px;
+  margin-top: 18px;
 }
 
 .editor-page {
