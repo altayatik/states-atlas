@@ -271,6 +271,68 @@ export const STATE_TRAVEL_OPTIONS = {
       'Yellowstone National Park',
     ],
   },
+  AB: {
+    majorCities: ['Calgary'],
+    nationalParks: [
+      'Banff National Park',
+      'Jasper National Park',
+      'Waterton Lakes National Park',
+      'Wood Buffalo National Park',
+    ],
+  },
+  BC: {
+    majorCities: ['Vancouver'],
+    nationalParks: [
+      'Yoho National Park',
+      'Kootenay National Park',
+      'Pacific Rim National Park Reserve',
+      'Mount Revelstoke National Park',
+    ],
+  },
+  MB: {
+    majorCities: [],
+    nationalParks: [],
+  },
+  NB: {
+    majorCities: [],
+    nationalParks: ['Fundy National Park'],
+  },
+  NL: {
+    majorCities: [],
+    nationalParks: ['Gros Morne National Park', 'Terra Nova National Park'],
+  },
+  NS: {
+    majorCities: [],
+    nationalParks: ['Cape Breton Highlands National Park'],
+  },
+  NT: {
+    majorCities: [],
+    nationalParks: ['Wood Buffalo National Park', 'Nahanni National Park Reserve'],
+  },
+  NU: {
+    majorCities: [],
+    nationalParks: ['Auyuittuq National Park'],
+  },
+  ON: {
+    majorCities: ['Toronto'],
+    nationalParks: ['Bruce Peninsula National Park', 'Thousand Islands National Park'],
+  },
+  PE: {
+    majorCities: [],
+    nationalParks: ['Prince Edward Island National Park'],
+  },
+  QC: {
+    majorCities: ['Montreal'],
+    nationalParks: ['La Mauricie National Park'],
+  },
+  SK: {
+    majorCities: [],
+    nationalParks: [],
+  },
+  YT: {
+    majorCities: [],
+    nationalParks: ['Kluane National Park and Reserve'],
+  },
 }
 
 export function getCityOptionsForState(stateCode) {

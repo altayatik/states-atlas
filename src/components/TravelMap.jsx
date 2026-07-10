@@ -3,22 +3,27 @@ import maplibregl from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
 import { feature } from 'topojson-client'
 import usAtlas from 'us-atlas/states-10m.json'
-import usAtlasAlbers from 'us-atlas/states-albers-10m.json'
+import canadaProvincesGeoJson from '../data/canadaProvinces.json'
+import { CANADA_SUBDIVISION_CODE_BY_NAME, CANADA_SUBDIVISION_CODES } from '../data/canada'
 import { fipsToStateCode, STATUS_COLORS } from '../data/states'
-import { StateGeometryInset } from './StateGeometryInset'
 import { StatusLegend } from './StatusLegend'
 import { isMetroVisited, isParkVisited } from '../utils/places'
 
-// Alaska and Hawaii are excluded from the main MapLibre layer (they're shown
-// as separate insets below), but their real outlines already exist in the
-// Albers USA atlas, pre-projected and pre-positioned so Alaska doesn't cross
-// the antimeridian and both states render at a sane, compact scale.
-const INSET_STATE_CODES = ['AK', 'HI']
-
 const DEFAULT_BOUNDS = [
-  [-127, 23],
-  [-66, 51],
+  [-142, 22],
+  [-52, 59],
 ]
+
+const SELECTED_VIEW_BOUNDS = {
+  AK: [
+    [-170, 51],
+    [-129, 72],
+  ],
+  HI: [
+    [-130, 22],
+    [-118, 30],
+  ],
+}
 
 const MAP_STYLE = {
   version: 8,
@@ -61,6 +66,31 @@ const stateFillOpacity = [
   0.94,
 ]
 
+const HAWAII_SOURCE_CENTER = [-157.35, 20.75]
+const HAWAII_DISPLAY_CENTER = [-124.15, 25.55]
+const HAWAII_DISPLAY_SCALE = 2.1
+const canadianSubdivisionCodes = new Set(CANADA_SUBDIVISION_CODES)
+
+function transformHawaiiCoordinate(coordinate) {
+  const [lng, lat] = coordinate
+  return [
+    HAWAII_DISPLAY_CENTER[0] + (lng - HAWAII_SOURCE_CENTER[0]) * HAWAII_DISPLAY_SCALE,
+    HAWAII_DISPLAY_CENTER[1] + (lat - HAWAII_SOURCE_CENTER[1]) * HAWAII_DISPLAY_SCALE,
+  ]
+}
+
+function transformGeometryCoordinates(coordinates, transformCoordinate) {
+  if (!Array.isArray(coordinates?.[0])) return transformCoordinate(coordinates)
+  return coordinates.map((item) => transformGeometryCoordinates(item, transformCoordinate))
+}
+
+function transformHawaiiGeometry(geometry) {
+  return {
+    ...geometry,
+    coordinates: transformGeometryCoordinates(geometry.coordinates, transformHawaiiCoordinate),
+  }
+}
+
 function getGeometryCoordinates(geometry) {
   if (!geometry) return []
   if (geometry.type === 'Point') return [geometry.coordinates]
@@ -101,15 +131,20 @@ function buildPlaceFeature(item, type, states, selectedPlaceType, selectedPlaceI
     ? isMetroVisited(item, states)
     : isParkVisited(item, states)
   const stateSelected = item.stateCodes?.includes(selectedStateCode)
-  const center = getGeometryCenter(item.geometry)
-  if (!selected && !visited) return null
+  const isCanadianPlace = item.country === 'canada' || item.stateCodes?.some((code) => canadianSubdivisionCodes.has(code))
+  const canShowForSelectedState = stateSelected && !isCanadianPlace
+  const sourceCenter = getGeometryCenter(item.geometry)
+  const center = sourceCenter && item.stateCodes?.includes('HI')
+    ? transformHawaiiCoordinate(sourceCenter)
+    : sourceCenter
+  if (!selected && !visited && !canShowForSelectedState) return null
   if (!center) return null
 
   return {
     center,
     item,
     selected,
-    stateSelected,
+    stateSelected: canShowForSelectedState,
     type,
     visited,
   }
@@ -124,6 +159,25 @@ function fitDefaultBounds(map) {
     duration: prefersReducedMotion() ? 0 : 700,
     padding: 34,
   })
+}
+
+function fitInsetStateBounds(map, code) {
+  const bounds = SELECTED_VIEW_BOUNDS[code]
+  if (!bounds) return
+
+  map.fitBounds(bounds, {
+    duration: prefersReducedMotion() ? 0 : 750,
+    padding: 54,
+  })
+}
+
+function syncViewportDataset(map, element) {
+  if (!element) return
+
+  const center = map.getCenter()
+  element.dataset.centerLng = center.lng.toFixed(4)
+  element.dataset.centerLat = center.lat.toFixed(4)
+  element.dataset.zoom = map.getZoom().toFixed(2)
 }
 
 export function TravelMap({
@@ -145,30 +199,41 @@ export function TravelMap({
   const [mapZoom, setMapZoom] = useState(0)
 
   const stateByCode = useMemo(() => new Map(states.map((state) => [state.code, state])), [states])
-  const insetStates = useMemo(
-    () => states.filter((state) => INSET_STATE_CODES.includes(state.code)),
-    [states],
-  )
   const selectedPlaceId = selectedPlace?.item?.id ?? ''
   const selectedPlaceType = selectedPlace?.type ?? ''
 
-  // Real Alaska/Hawaii outlines from the Albers USA atlas, keyed by state code.
-  const insetGeometryByCode = useMemo(() => {
-    const byCode = {}
-    feature(usAtlasAlbers, usAtlasAlbers.objects.states).features.forEach((item) => {
-      const code = fipsToStateCode[item.id]
-      if (INSET_STATE_CODES.includes(code)) byCode[code] = item.geometry
-    })
-    return byCode
-  }, [])
+  const canadaFeatures = useMemo(() => {
+    return canadaProvincesGeoJson.features.map((item) => {
+      const provinceName = item.properties?.name ?? 'Canada'
+      const provinceCode = CANADA_SUBDIVISION_CODE_BY_NAME[provinceName] ?? provinceName.toUpperCase().slice(0, 2)
+      const province = stateByCode.get(provinceCode)
+      if (!province) return null
+
+      return {
+        type: 'Feature',
+        id: provinceCode,
+        properties: {
+          code: provinceCode,
+          name: province.name,
+          status: province.status,
+          selected: selectedStateCode === provinceCode,
+          hovered: hoveredStateCode === provinceCode,
+          hasSelection: Boolean(selectedStateCode),
+        },
+        geometry: item.geometry,
+      }
+    }).filter(Boolean)
+  }, [hoveredStateCode, selectedStateCode, stateByCode])
 
   const statesGeoJson = useMemo(() => ({
     type: 'FeatureCollection',
-    features: feature(usAtlas, usAtlas.objects.states).features
+    features: [
+      ...canadaFeatures,
+      ...feature(usAtlas, usAtlas.objects.states).features
       .map((item) => {
         const code = fipsToStateCode[item.id]
         const state = stateByCode.get(code)
-        if (!code || !state || INSET_STATE_CODES.includes(code)) return null
+        if (!code || !state) return null
 
         return {
           type: 'Feature',
@@ -181,11 +246,12 @@ export function TravelMap({
             hovered: hoveredStateCode === code,
             hasSelection: Boolean(selectedStateCode),
           },
-          geometry: item.geometry,
+          geometry: code === 'HI' ? transformHawaiiGeometry(item.geometry) : item.geometry,
         }
       })
       .filter(Boolean),
-  }), [hoveredStateCode, selectedStateCode, stateByCode])
+    ].filter(Boolean),
+  }), [canadaFeatures, hoveredStateCode, selectedStateCode, stateByCode])
 
   const placeFeatures = useMemo(() => [
     ...metros
@@ -220,11 +286,11 @@ export function TravelMap({
       dragRotate: false,
       keyboard: true,
       maxBounds: [
-        [-132, 18],
-        [-62, 55],
+        [-180, -16],
+        [-45, 73],
       ],
       maxZoom: 8.5,
-      minZoom: 2.45,
+      minZoom: 1.6,
       pitchWithRotate: false,
       scrollZoom: true,
       style: MAP_STYLE,
@@ -233,6 +299,8 @@ export function TravelMap({
     })
 
     mapRef.current = map
+
+    const syncViewport = () => syncViewportDataset(map, mapContainerRef.current)
 
     map.on('load', () => {
       const latest = latestMapDataRef.current
@@ -282,7 +350,8 @@ export function TravelMap({
       })
 
       map.on('click', 'states-fill', (event) => {
-        const code = event.features?.[0]?.properties?.code
+        const properties = event.features?.[0]?.properties
+        const code = properties?.code
         if (code) latestMapDataRef.current.onSelectState(code)
       })
 
@@ -302,12 +371,16 @@ export function TravelMap({
 
       fitDefaultBounds(map)
       setMapZoom(map.getZoom())
+      syncViewport()
       setIsMapReady(true)
     })
 
     map.on('zoom', () => {
       setMapZoom(map.getZoom())
+      syncViewport()
     })
+
+    map.on('move', syncViewport)
 
     return () => {
       placeMarkersRef.current.forEach((marker) => marker.remove())
@@ -323,6 +396,13 @@ export function TravelMap({
 
     map.getSource('states')?.setData(statesGeoJson)
   }, [isMapReady, statesGeoJson])
+
+  useEffect(() => {
+    const map = mapRef.current
+    if (!map || !isMapReady || !SELECTED_VIEW_BOUNDS[selectedStateCode]) return
+
+    fitInsetStateBounds(map, selectedStateCode)
+  }, [isMapReady, selectedStateCode])
 
   useEffect(() => {
     const map = mapRef.current
@@ -375,25 +455,13 @@ export function TravelMap({
       <p className="map-hint">Pinch or scroll to explore. Zoom in to reveal cities and parks.</p>
 
       <div className="map-shell map-shell--maplibre">
-        <div ref={mapContainerRef} className="maplibre-atlas" aria-label="Gesture-driven United States travel map" />
-        <div className="state-insets" aria-label="Alaska and Hawaii map insets">
-          {insetStates.map((state) => {
-            const geometry = insetGeometryByCode[state.code]
-            if (!geometry) return null
-
-            return (
-              <StateGeometryInset
-                code={state.code}
-                geometry={geometry}
-                key={state.code}
-                name={state.name}
-                selected={state.code === selectedStateCode}
-                statusColor={STATUS_COLORS[state.status]}
-                onSelect={() => onSelectState(state.code)}
-              />
-            )
-          })}
-        </div>
+        <div
+          ref={mapContainerRef}
+          className="maplibre-atlas"
+          data-canada-feature-count={canadaFeatures.length}
+          data-canada-feature-codes={canadaFeatures.map((item) => item.properties.code).join(' ')}
+          aria-label="Gesture-driven United States travel map"
+        />
       </div>
 
       <StatusLegend />

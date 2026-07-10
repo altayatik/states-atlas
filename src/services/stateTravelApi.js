@@ -1,29 +1,26 @@
+import { collection, getDocs, orderBy, query } from 'firebase/firestore'
+import { httpsCallable } from 'firebase/functions'
+import { getFirebaseDb, getFirebaseFunctions, isFirebaseConfigured } from './firebaseClient'
 import { loadStoredStates, saveStoredStates } from '../utils/storage'
 
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL?.replace(/\/$/, '')
-const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY
-const DEV_EDITOR_PHRASE = import.meta.env.VITE_DEV_EDITOR_PHRASE
 const ADMIN_TOKEN_KEY = 'statesAtlasAdminToken'
 const LEGACY_ADMIN_TOKEN_KEY = 'states-atlas.admin-token.v1'
-const CONFIG_MESSAGE = 'Editor unlock is not configured yet. Check the Supabase function and secrets.'
+const CONFIG_MESSAGE = 'Editor unlock is not configured yet. Check the Firebase function and secrets.'
 const WRONG_SECRET_MESSAGE = 'That secret phrase doesn’t match. Try again.'
+const ENTRIES_COLLECTION = 'stateTravelEntries'
+const ADMIN_FUNCTION = 'statesAdmin'
 
-export const isSupabaseConfigured = Boolean(SUPABASE_URL && SUPABASE_ANON_KEY)
+export { isFirebaseConfigured }
 
-function isLocalDevHost() {
-  if (typeof window === 'undefined') return false
-  return ['localhost', '127.0.0.1', '::1'].includes(window.location.hostname)
+function toIsoDate(value) {
+  if (!value) return ''
+  if (typeof value === 'string') return value
+  if (value.toDate instanceof Function) return value.toDate().toISOString()
+  if (value instanceof Date) return value.toISOString()
+  return ''
 }
 
-function getHeaders() {
-  return {
-    apikey: SUPABASE_ANON_KEY,
-    Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
-    'Content-Type': 'application/json',
-  }
-}
-
-function toStateEntry(row) {
+function toStateEntry(row = {}) {
   return {
     code: row.state_code,
     name: row.state_name,
@@ -35,7 +32,7 @@ function toStateEntry(row) {
     honorableMention: Boolean(row.honorable_mention),
     citiesVisited: row.cities_visited ?? [],
     parksVisited: row.parks_visited ?? [],
-    updatedAt: row.updated_at ?? '',
+    updatedAt: toIsoDate(row.updated_at),
   }
 }
 
@@ -54,21 +51,15 @@ function toDatabaseEntry(entry) {
   }
 }
 
-async function readJsonResponse(response) {
-  const payload = await response.json().catch(() => ({}))
-
-  if (!response.ok) {
-    const error = new Error(payload.error || 'The atlas request failed.')
-    error.status = response.status
-    error.details = payload.details
-    throw error
-  }
-
-  return payload
+function getCallable() {
+  const functions = getFirebaseFunctions()
+  if (!functions) return null
+  return httpsCallable(functions, ADMIN_FUNCTION)
 }
 
-async function readJsonPayload(response) {
-  return response.json().catch(() => ({}))
+function getCallableStatus(error) {
+  const code = error?.code || ''
+  return code.includes('unauthenticated') || code.includes('permission-denied') ? 401 : 500
 }
 
 export function getStoredAdminToken() {
@@ -90,20 +81,21 @@ export function clearAdminToken() {
 }
 
 export async function fetchStateTravelEntries() {
-  if (!isSupabaseConfigured) {
+  if (!isFirebaseConfigured) {
     return loadStoredStates() ?? []
   }
 
-  const response = await fetch(`${SUPABASE_URL}/rest/v1/state_travel_entries?select=*`, {
-    headers: getHeaders(),
-  })
-  const rows = await readJsonResponse(response)
+  const db = getFirebaseDb()
+  const snapshot = await getDocs(query(collection(db, ENTRIES_COLLECTION), orderBy('state_code')))
 
-  return rows.map(toStateEntry)
+  return snapshot.docs.map((doc) => toStateEntry({
+    id: doc.id,
+    ...doc.data(),
+  }))
 }
 
 export async function upsertStateTravelEntry(entry, auth = {}) {
-  if (!isSupabaseConfigured) {
+  if (!isFirebaseConfigured) {
     const storedStates = loadStoredStates() ?? []
     const nextStates = storedStates.some((state) => state.code === entry.code)
       ? storedStates.map((state) => (state.code === entry.code ? entry : state))
@@ -112,21 +104,30 @@ export async function upsertStateTravelEntry(entry, auth = {}) {
     return { entry, adminToken: auth.adminToken || '' }
   }
 
-  const response = await fetch(`${SUPABASE_URL}/functions/v1/states-admin`, {
-    method: 'POST',
-    headers: getHeaders(),
-    body: JSON.stringify({
+  const callAdmin = getCallable()
+  if (!callAdmin) {
+    const error = new Error(CONFIG_MESSAGE)
+    error.status = 500
+    throw error
+  }
+
+  try {
+    const result = await callAdmin({
       action: 'upsert',
       adminToken: auth.adminToken || undefined,
       entry: toDatabaseEntry(entry),
       secretPhrase: auth.secretPhrase || undefined,
-    }),
-  })
-  const payload = await readJsonResponse(response)
+    })
 
-  return {
-    adminToken: payload.adminToken,
-    entry: toStateEntry(payload.entry),
+    return {
+      adminToken: result.data?.adminToken,
+      entry: toStateEntry(result.data?.entry),
+    }
+  } catch (error) {
+    const status = getCallableStatus(error)
+    const nextError = new Error(status === 401 ? WRONG_SECRET_MESSAGE : (error.message || CONFIG_MESSAGE))
+    nextError.status = status
+    throw nextError
   }
 }
 
@@ -134,15 +135,33 @@ export async function validateEditorAccess({ adminToken, secretPhrase } = {}) {
   const trimmedPhrase = typeof secretPhrase === 'string' ? secretPhrase.trim() : ''
   const token = typeof adminToken === 'string' ? adminToken.trim() : ''
 
-  if (!isSupabaseConfigured) {
-    if (isLocalDevHost() && DEV_EDITOR_PHRASE) {
-      if (
-        (trimmedPhrase && trimmedPhrase === DEV_EDITOR_PHRASE)
-        || (token && token.startsWith('dev-editor:'))
-      ) {
-        return { adminToken: token || `dev-editor:${Date.now()}`, ok: true }
-      }
+  if (!isFirebaseConfigured) {
+    return {
+      adminToken: '',
+      message: CONFIG_MESSAGE,
+      ok: false,
+    }
+  }
 
+  const callAdmin = getCallable()
+  if (!callAdmin) {
+    return {
+      adminToken: '',
+      message: CONFIG_MESSAGE,
+      ok: false,
+    }
+  }
+
+  let result
+  try {
+    result = await callAdmin({
+      action: 'validate',
+      adminToken: token || undefined,
+      secretPhrase: trimmedPhrase || undefined,
+    })
+  } catch (error) {
+    const status = getCallableStatus(error)
+    if (status === 401) {
       return {
         adminToken: '',
         message: WRONG_SECRET_MESSAGE,
@@ -150,6 +169,7 @@ export async function validateEditorAccess({ adminToken, secretPhrase } = {}) {
       }
     }
 
+    console.warn('statesAdmin validation request failed.', error instanceof Error ? error.message : error)
     return {
       adminToken: '',
       message: CONFIG_MESSAGE,
@@ -157,54 +177,14 @@ export async function validateEditorAccess({ adminToken, secretPhrase } = {}) {
     }
   }
 
-  let response
-  try {
-    response = await fetch(`${SUPABASE_URL}/functions/v1/states-admin`, {
-      method: 'POST',
-      headers: getHeaders(),
-      body: JSON.stringify({
-        adminToken: token || undefined,
-        action: 'validate',
-        secretPhrase: trimmedPhrase || undefined,
-      }),
-    })
-  } catch (error) {
-    console.warn('states-admin validation request failed.', error instanceof Error ? error.message : error)
-    return {
-      adminToken: '',
-      message: CONFIG_MESSAGE,
-      ok: false,
-    }
-  }
+  const returnedToken = typeof result.data?.adminToken === 'string'
+    ? result.data.adminToken.trim()
+    : ''
 
-  const payload = await readJsonPayload(response)
-
-  if (response.status === 401) {
-    return {
-      adminToken: '',
-      message: WRONG_SECRET_MESSAGE,
-      ok: false,
-    }
-  }
-
-  if (!response.ok) {
-    console.warn('states-admin validation failed.', {
-      error: payload.error,
-      status: response.status,
-    })
-    return {
-      adminToken: '',
-      message: CONFIG_MESSAGE,
-      ok: false,
-    }
-  }
-
-  const returnedToken = typeof payload.adminToken === 'string' ? payload.adminToken.trim() : ''
-
-  if (payload.ok !== true || !returnedToken) {
-    console.warn('states-admin validation returned an invalid success payload.', {
+  if (result.data?.ok !== true || !returnedToken) {
+    console.warn('statesAdmin validation returned an invalid success payload.', {
       hasAdminToken: Boolean(returnedToken),
-      ok: payload.ok,
+      ok: result.data?.ok,
     })
     return {
       adminToken: '',
@@ -224,23 +204,33 @@ export async function validateAdminSecret(secretPhrase) {
 }
 
 export async function deleteStateTravelEntry(entryIdOrStateCode, auth = {}) {
-  if (!isSupabaseConfigured) {
+  if (!isFirebaseConfigured) {
     const storedStates = loadStoredStates() ?? []
     saveStoredStates(storedStates.filter((state) => state.code !== entryIdOrStateCode && state.id !== entryIdOrStateCode))
     return { success: true, adminToken: auth.adminToken || '' }
   }
 
-  const response = await fetch(`${SUPABASE_URL}/functions/v1/states-admin`, {
-    method: 'POST',
-    headers: getHeaders(),
-    body: JSON.stringify({
+  const callAdmin = getCallable()
+  if (!callAdmin) {
+    const error = new Error(CONFIG_MESSAGE)
+    error.status = 500
+    throw error
+  }
+
+  try {
+    const result = await callAdmin({
       action: 'delete',
       adminToken: auth.adminToken || undefined,
-      id: entryIdOrStateCode.length === 2 ? undefined : entryIdOrStateCode,
+      id: /^([A-Z]{2}|CAN)$/.test(entryIdOrStateCode) ? undefined : entryIdOrStateCode,
       secretPhrase: auth.secretPhrase || undefined,
-      state_code: entryIdOrStateCode.length === 2 ? entryIdOrStateCode : undefined,
-    }),
-  })
+      state_code: /^([A-Z]{2}|CAN)$/.test(entryIdOrStateCode) ? entryIdOrStateCode : undefined,
+    })
 
-  return readJsonResponse(response)
+    return result.data
+  } catch (error) {
+    const status = getCallableStatus(error)
+    const nextError = new Error(status === 401 ? WRONG_SECRET_MESSAGE : (error.message || CONFIG_MESSAGE))
+    nextError.status = status
+    throw nextError
+  }
 }

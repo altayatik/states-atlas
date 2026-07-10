@@ -62,7 +62,7 @@ function validateDraft(draft) {
   return ''
 }
 
-export function AtlasEditor({ states, onBack, onSave }) {
+export function AtlasEditor({ hideHeader = false, states, onBack, onSave }) {
   const [selectedCode, setSelectedCode] = useState('')
   const [draft, setDraft] = useState(null)
   const [savedSnapshot, setSavedSnapshot] = useState('')
@@ -232,23 +232,25 @@ export function AtlasEditor({ states, onBack, onSave }) {
       : <CheckCircle2 size={16} aria-hidden="true" />
 
   return (
-    <main className="editor-page">
-      <header className="editor-header">
-        <div>
-          <p className="eyebrow">Private dashboard</p>
-          <h1>Road Atlas Editor</h1>
-          <p>Update state memories, statuses, badges, city lists, and park lists.</p>
-        </div>
-        <button className="button button--secondary" type="button" onClick={handleBack}>
-          Back to public atlas
-        </button>
-      </header>
+    <>
+      {!hideHeader && (
+        <header className="editor-header">
+          <div>
+            <p className="eyebrow">Private dashboard</p>
+            <h1>Road Atlas Editor</h1>
+            <p>Update state memories, statuses, badges, city lists, and park lists.</p>
+          </div>
+          <button className="button button--secondary" type="button" onClick={handleBack}>
+            Back to public atlas
+          </button>
+        </header>
+      )}
 
       <section className="editor-tools editor-tools--single" aria-label="State picker">
         <label>
-          Choose a state to edit
+          Choose a state or territory to edit
           <select value={selectedCode} onChange={handleStateChange}>
-            <option value="">Choose a state</option>
+            <option value="">Choose a state or territory</option>
             {states.map((state) => (
               <option key={state.code} value={state.code}>
                 {state.name} — {formatStatus(state.status)}
@@ -261,7 +263,7 @@ export function AtlasEditor({ states, onBack, onSave }) {
       <section className="editor-select-panel" aria-label="Selected state editor">
         {!draft ? (
           <div className="editor-empty-state">
-            <h2>Choose a state to start editing.</h2>
+            <h2>Choose a state or territory to start editing.</h2>
           </div>
         ) : (
           <article className="editor-form-panel">
@@ -466,6 +468,6 @@ export function AtlasEditor({ states, onBack, onSave }) {
           </article>
         )}
       </section>
-    </main>
+    </>
   )
 }

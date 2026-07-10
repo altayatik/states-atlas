@@ -10,6 +10,9 @@ const PLACE_ALIASES = {
 
 export function normalizePlaceName(value) {
   return String(value ?? '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[\u02bb\u2018\u2019']/g, '')
     .toLowerCase()
     .replace(/\bnational park\b/g, '')
     .replace(/\b(metropolitan area|metro area|bay area|area)\b/g, '')

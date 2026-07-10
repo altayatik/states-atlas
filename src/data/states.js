@@ -1,3 +1,5 @@
+import { CANADA_SUBDIVISION_CODES, canadianProvinceEntries } from './canada'
+
 export const STATUSES = [
   'not_visited',
   'passed_through',
@@ -41,6 +43,7 @@ export const REGIONS = {
   South: ['DE', 'FL', 'GA', 'MD', 'NC', 'SC', 'VA', 'WV', 'AL', 'KY', 'MS', 'TN', 'AR', 'LA', 'OK', 'TX'],
   Midwest: ['IL', 'IN', 'MI', 'OH', 'WI', 'IA', 'KS', 'MN', 'MO', 'NE', 'ND', 'SD'],
   West: ['AZ', 'CO', 'ID', 'MT', 'NV', 'NM', 'UT', 'WY', 'AK', 'CA', 'HI', 'OR', 'WA'],
+  Canada: CANADA_SUBDIVISION_CODES,
 }
 
 const stateNames = [
@@ -239,9 +242,10 @@ const sampleData = {
   },
 }
 
-export const states = stateNames.map(([code, name]) => ({
+export const usStates = stateNames.map(([code, name]) => ({
   code,
   name,
+  kind: 'state',
   status: 'not_visited',
   firstVisitedYear: '',
   favoriteMemory: '',
@@ -253,6 +257,8 @@ export const states = stateNames.map(([code, name]) => ({
   updatedAt: '',
   ...sampleData[code],
 }))
+
+export const states = [...usStates, ...canadianProvinceEntries]
 
 export const statesByCode = Object.fromEntries(states.map((state) => [state.code, state]))
 

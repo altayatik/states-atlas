@@ -1,8 +1,8 @@
-import { Flag, Heart, MapPin, Mountain, Star, TentTree, Trophy } from 'lucide-react'
+import { Flag, Heart, MapPin, Mountain, TentTree, Trophy } from 'lucide-react'
 import { formatPercent } from '../utils/formatters'
 
 const statConfig = [
-  ['statesVisited', 'States visited', Flag, '#8fbf9a', '#2f6f4f'],
+  ['statesVisited', 'States/provinces', Flag, '#8fbf9a', '#2f6f4f'],
   ['statesStayed', 'Stayed overnight', TentTree, '#a9d6ff', '#245f7a'],
   ['favorites', 'Favorites', Heart, '#ffe680', '#80651d'],
   ['citiesLogged', 'Cities logged', MapPin, '#d99a70', '#75462f'],
@@ -40,13 +40,6 @@ export function StatsCards({ stats, regions }) {
             </article>
           )
         })}
-        <article className="stat-card stat-card--wide" style={{ '--stat-accent': '#f0b36f', '--stat-ink': '#7a4b24' }}>
-          <div className="stat-card__icon">
-            <Star size={20} aria-hidden="true" />
-          </div>
-          <p>Latest updated</p>
-          <strong>{stats.latestUpdated?.name ?? 'No edits yet'}</strong>
-        </article>
       </div>
 
       <div className="regional-progress" aria-label="Regional progress">

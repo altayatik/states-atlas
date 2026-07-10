@@ -24,7 +24,7 @@ export function StateDetailPanel({ selectedItem, state, states = [], showEdit = 
 
         <dl className="detail-list">
           <div>
-            <dt>{relatedStates.length > 1 ? 'States' : 'State'}</dt>
+            <dt>{relatedStates.length > 1 ? 'Places' : 'Place'}</dt>
             <dd>{formatList(relatedStates)}</dd>
           </div>
           <div>
@@ -45,7 +45,7 @@ export function StateDetailPanel({ selectedItem, state, states = [], showEdit = 
   if (!state) {
     return (
       <aside className="detail-panel detail-panel--empty">
-        <h2>Pick a state to explore.</h2>
+        <h2>Pick a state or territory to explore.</h2>
       </aside>
     )
   }
@@ -64,7 +64,7 @@ export function StateDetailPanel({ selectedItem, state, states = [], showEdit = 
     <aside className="detail-panel" aria-labelledby="state-detail-title">
       <div className="detail-panel__header">
         <div>
-          <p className="eyebrow">{formatStatus(state.status)}</p>
+          <p className="eyebrow">{state.kind === 'country' ? 'Territory' : formatStatus(state.status)}</p>
           <h2 id="state-detail-title">{state.name}</h2>
         </div>
         {showEdit && (

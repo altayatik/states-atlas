@@ -16,6 +16,7 @@ import {
   Trees,
   Trophy,
   Waves,
+  X,
 } from 'lucide-react'
 
 const achievementIcons = {
@@ -36,8 +37,26 @@ const achievementIcons = {
   waves: Waves,
 }
 
+const canadaAchievementIds = new Set([
+  'canada_stamp',
+  'canadian_park_starter',
+  'canada_province_sampler',
+  'canada_halfway',
+  'canadian_park_trail',
+  'north_of_border_city',
+])
+
 export function Achievements({ achievements }) {
-  const [expandedId, setExpandedId] = useState('')
+  const [selectedId, setSelectedId] = useState('')
+  const selectedAchievement = achievements.find((achievement) => achievement.id === selectedId)
+  const canadaAchievements = achievements.filter((achievement) => canadaAchievementIds.has(achievement.id))
+  const mainAchievements = achievements.filter((achievement) => !canadaAchievements.includes(achievement))
+  const orderedAchievements = [...mainAchievements, ...canadaAchievements]
+  const SelectedIcon = selectedAchievement
+    ? selectedAchievement.unlocked
+      ? achievementIcons[selectedAchievement.icon] ?? Stamp
+      : Lock
+    : null
 
   return (
     <section className="content-section" aria-labelledby="achievements-title">
@@ -48,27 +67,24 @@ export function Achievements({ achievements }) {
         </div>
       </div>
       <div className="achievement-grid">
-        {achievements.map((achievement) => {
+        {orderedAchievements.map((achievement) => {
           const Icon = achievement.unlocked
             ? achievementIcons[achievement.icon] ?? Stamp
             : Lock
-          const isExpanded = expandedId === achievement.id
 
           return (
             <article
               className={[
                 'achievement',
                 achievement.unlocked ? 'achievement--unlocked' : '',
-                isExpanded ? 'achievement--expanded' : '',
               ].filter(Boolean).join(' ')}
               key={achievement.id}
               style={{ '--achievement-accent': achievement.accent }}
             >
               <button
-                aria-expanded={isExpanded}
                 className="achievement__button"
                 type="button"
-                onClick={() => setExpandedId(isExpanded ? '' : achievement.id)}
+                onClick={() => setSelectedId(achievement.id)}
               >
                 <span className="achievement__icon">
                   <Icon size={17} aria-hidden="true" />
@@ -78,16 +94,45 @@ export function Achievements({ achievements }) {
                   <small>{achievement.unlocked ? 'Unlocked' : 'Locked'} · {achievement.progressText}</small>
                 </span>
               </button>
-              {isExpanded && (
-                <div className="achievement__details">
-                  <p>{achievement.description}</p>
-                  <span>{achievement.progressText}</span>
-                </div>
-              )}
             </article>
           )
         })}
       </div>
+
+      {selectedAchievement && (
+        <div
+          className="achievement-modal-backdrop"
+          role="presentation"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) setSelectedId('')
+          }}
+        >
+          <article
+            aria-labelledby="achievement-modal-title"
+            aria-modal="true"
+            className="achievement-modal"
+            role="dialog"
+            style={{ '--achievement-accent': selectedAchievement.accent }}
+            onMouseDown={(event) => event.stopPropagation()}
+          >
+            <button
+              aria-label="Close achievement"
+              className="icon-button achievement-modal__close"
+              type="button"
+              onClick={() => setSelectedId('')}
+            >
+              <X size={18} aria-hidden="true" />
+            </button>
+            <div className="achievement-modal__icon">
+              {SelectedIcon && <SelectedIcon size={26} aria-hidden="true" />}
+            </div>
+            <p className="eyebrow">{selectedAchievement.unlocked ? 'Unlocked' : 'Locked'} badge</p>
+            <h3 id="achievement-modal-title">{selectedAchievement.name}</h3>
+            <p>{selectedAchievement.description}</p>
+            <span>{selectedAchievement.progressText}</span>
+          </article>
+        </div>
+      )}
     </section>
   )
 }

@@ -1,4 +1,7 @@
 import { achievements } from '../data/achievements'
+import { CANADA_SUBDIVISION_CODES, CANADA_SUBDIVISIONS } from '../data/canada'
+import { getCanadianProvinceCodesForPlaces } from './canada'
+import { isPlaceOptionSelected } from './places'
 import { isVisited } from './stats'
 
 const contiguousStates = [
@@ -54,10 +57,32 @@ const contiguousStates = [
 
 export function evaluateAchievements(states) {
   const stateByCode = new Map(states.map((state) => [state.code, state]))
+  const usStates = states.filter((state) => state.kind === 'state')
+  const canadianCodes = new Set(CANADA_SUBDIVISION_CODES)
+  const canadianEntries = states.filter((state) => canadianCodes.has(state.code))
   const visitedCodes = new Set(states.filter(isVisited).map((state) => state.code))
-  const favoriteCount = states.filter((state) => state.status === 'favorite').length
+  const visitedUsCodes = new Set(usStates.filter(isVisited).map((state) => state.code))
+  const favoriteCount = usStates.filter((state) => state.status === 'favorite').length
   const cityCount = new Set(states.flatMap((state) => state.citiesVisited ?? []).filter(Boolean)).size
   const parkCount = new Set(states.flatMap((state) => state.parksVisited ?? []).filter(Boolean)).size
+  const legacyCanada = stateByCode.get('CAN')
+  const canadaSubdivisionNames = CANADA_SUBDIVISIONS.map(([, name]) => name)
+  const visitedCanadianCodes = new Set(canadianEntries.filter(isVisited).map((state) => state.code))
+  getCanadianProvinceCodesForPlaces([
+    ...(legacyCanada?.citiesVisited ?? []),
+    ...(legacyCanada?.parksVisited ?? []),
+  ]).forEach((code) => visitedCanadianCodes.add(code))
+  const canadaSubdivisionCount = visitedCanadianCodes.size
+  const canadaCityCount = new Set(
+    [
+      ...canadianEntries.flatMap((state) => state.citiesVisited ?? []),
+      ...(legacyCanada?.citiesVisited ?? []),
+    ].filter((city) => !isPlaceOptionSelected(canadaSubdivisionNames, city)),
+  ).size
+  const canadaParkCount = new Set([
+    ...canadianEntries.flatMap((state) => state.parksVisited ?? []),
+    ...(legacyCanada?.parksVisited ?? []),
+  ].filter(Boolean)).size
 
   return achievements.map((achievement) => {
     let unlocked = false
@@ -70,8 +95,8 @@ export function evaluateAchievements(states) {
     }
 
     if (achievement.type === 'count') {
-      progress = visitedCodes.size
-      unlocked = visitedCodes.size >= achievement.threshold
+      progress = visitedUsCodes.size
+      unlocked = visitedUsCodes.size >= achievement.threshold
     }
 
     if (achievement.type === 'favorites') {
@@ -89,6 +114,21 @@ export function evaluateAchievements(states) {
       unlocked = parkCount >= achievement.threshold
     }
 
+    if (achievement.type === 'canada_parks') {
+      progress = canadaParkCount
+      unlocked = canadaParkCount >= achievement.threshold
+    }
+
+    if (achievement.type === 'canada_subdivisions') {
+      progress = canadaSubdivisionCount
+      unlocked = canadaSubdivisionCount >= achievement.threshold
+    }
+
+    if (achievement.type === 'canada_cities') {
+      progress = canadaCityCount
+      unlocked = canadaCityCount >= achievement.threshold
+    }
+
     if (achievement.type === 'contiguous') {
       progress = contiguousStates.filter((code) => isVisited(stateByCode.get(code))).length
       total = contiguousStates.length
@@ -96,9 +136,9 @@ export function evaluateAchievements(states) {
     }
 
     if (achievement.type === 'all_states') {
-      progress = visitedCodes.size
-      total = states.length
-      unlocked = progress === states.length
+      progress = visitedUsCodes.size
+      total = usStates.length
+      unlocked = progress === usStates.length
     }
 
     return {
