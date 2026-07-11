@@ -418,6 +418,8 @@ function App() {
               {stats.statesVisited} of {stats.statesTotal} states so far — tap any state for the story.
             </p>
           </div>
+          <StatsCards regions={regions} stats={stats} />
+
           <div className="atlas-layout">
             <TravelMap
               metros={metroAreas}
@@ -435,8 +437,6 @@ function App() {
               states={atlasStates}
             />
           </div>
-
-          <StatsCards regions={regions} stats={stats} />
         </main>
       )}
     </div>

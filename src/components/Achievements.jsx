@@ -68,7 +68,7 @@ export function Achievements({ achievements }) {
         <p>Unlocked tiles stay vivid, locked ones stay quiet, and each badge keeps its progress available on tap.</p>
       </div>
       <div className="achievement-grid">
-        {orderedAchievements.map((achievement) => {
+        {orderedAchievements.map((achievement, index) => {
           const Icon = achievement.unlocked
             ? achievementIcons[achievement.icon] ?? Stamp
             : Lock
@@ -80,7 +80,7 @@ export function Achievements({ achievements }) {
                 achievement.unlocked ? 'achievement--unlocked' : '',
               ].filter(Boolean).join(' ')}
               key={achievement.id}
-              style={{ '--achievement-accent': achievement.accent }}
+              style={{ '--achievement-accent': achievement.accent, '--i': index }}
             >
               <button
                 className="achievement__button"

@@ -496,9 +496,13 @@ export function TravelMap({
       return
     }
 
-    const selectedFeature = statesGeoJson.features.find((item) => item.properties?.code === selectedStateCode)
+    // Read the latest features from the ref so this effect only refits when
+    // the selection itself changes (hover updates rebuild statesGeoJson and
+    // previously kept snapping the camera back, locking the zoom).
+    const features = latestMapDataRef.current.statesGeoJson?.features ?? []
+    const selectedFeature = features.find((item) => item.properties?.code === selectedStateCode)
     fitFeatureBounds(map, selectedFeature, mapContainerRef.current)
-  }, [isMapReady, selectedStateCode, statesGeoJson])
+  }, [isMapReady, selectedStateCode])
 
   useEffect(() => {
     const map = mapRef.current
@@ -532,7 +536,7 @@ export function TravelMap({
       })
 
       const marker = new maplibregl.Marker({
-        anchor: 'bottom',
+        anchor: 'center',
         element: button,
       }).setLngLat(place.center).addTo(map)
       placeMarkersRef.current.push(marker)

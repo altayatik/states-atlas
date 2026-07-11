@@ -28,40 +28,41 @@
 
 :root {
   /* ink */
-  --ink: #0e1b2c;
-  --ink-2: #44556d;
-  --ink-3: #74829a;
+  --ink: #1c2f3f;
+  --ink-2: #4b5c66;
+  --ink-3: #7c8880;
 
-  /* canvas */
-  --canvas: #f4f7fa;
+  /* canvas — national park dawn */
+  --canvas: #f8edd8;
 
-  /* accent system */
-  --blue: #2f6da8;
-  --blue-strong: #245686;
-  --blue-tint: #dcebf7;
-  --sky: #7fb2dd;
-  --mint: #4fb39c;
-  --mint-tint: #d9f0ea;
-  --sage: #7aa287;
-  --forest: #33685a;
-  --gold: #cf9f1f;
-  --gold-tint: #f6ecce;
-  --terracotta: #bd6f4c;
-  --terracotta-tint: #f4e2d8;
+  /* accent system — park poster palette */
+  --blue: #3a7ca5;
+  --blue-strong: #2c6285;
+  --blue-tint: #dcecf3;
+  --sky: #89c7db;
+  --mint: #63b08c;
+  --mint-tint: #ddefe2;
+  --sage: #7fa88a;
+  --forest: #2f6547;
+  --forest-deep: #214734;
+  --gold: #dfae2e;
+  --gold-tint: #f8ecc9;
+  --terracotta: #c96f45;
+  --terracotta-tint: #f6e2d4;
   --lavender: #8478c4;
-  --lavender-tint: #e6e2f5;
+  --lavender-tint: #e8e3f4;
   --danger: #b04f46;
   --danger-tint: #f5ded9;
 
   /* surfaces */
-  --frost: rgba(255, 255, 255, 0.66);
-  --frost-strong: rgba(255, 255, 255, 0.82);
-  --hairline: rgba(14, 27, 44, 0.07);
-  --hairline-2: rgba(14, 27, 44, 0.12);
-  --highlight: inset 0 1px 0 rgba(255, 255, 255, 0.9);
-  --shadow-sm: 0 1px 2px rgba(14, 27, 44, 0.05), 0 8px 24px -12px rgba(14, 27, 44, 0.12);
-  --shadow-md: 0 1px 2px rgba(14, 27, 44, 0.05), 0 18px 44px -16px rgba(14, 27, 44, 0.2);
-  --shadow-lg: 0 2px 4px rgba(14, 27, 44, 0.06), 0 32px 72px -20px rgba(14, 27, 44, 0.3);
+  --frost: rgba(255, 252, 244, 0.62);
+  --frost-strong: rgba(255, 253, 246, 0.82);
+  --hairline: rgba(74, 58, 32, 0.1);
+  --hairline-2: rgba(74, 58, 32, 0.17);
+  --highlight: inset 0 1px 0 rgba(255, 255, 255, 0.85);
+  --shadow-sm: 0 1px 2px rgba(74, 52, 28, 0.05), 0 8px 24px -12px rgba(74, 52, 28, 0.14);
+  --shadow-md: 0 1px 2px rgba(74, 52, 28, 0.05), 0 18px 44px -16px rgba(74, 52, 28, 0.22);
+  --shadow-lg: 0 2px 4px rgba(74, 52, 28, 0.06), 0 32px 72px -20px rgba(74, 52, 28, 0.32);
 
   /* type */
   --font: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
@@ -120,10 +121,25 @@ body {
   margin: 0;
   overflow-x: hidden;
   background:
-    radial-gradient(1000px 420px at 85% -8%, rgba(79, 179, 156, 0.1), transparent 60%),
-    linear-gradient(180deg, #e6eff7 0%, var(--canvas) 420px),
-    var(--canvas);
+    radial-gradient(circle at 14% 6%, rgba(137, 199, 219, 0.42), transparent 22rem),
+    radial-gradient(circle at 86% 12%, rgba(244, 200, 76, 0.32), transparent 20rem),
+    linear-gradient(180deg, #fdf3df 0%, #f4dec0 48%, var(--canvas) 100%);
   background-attachment: fixed;
+}
+
+/* layered mountain + treeline silhouette pinned to the horizon */
+body::before {
+  content: "";
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: -1;
+  height: min(34vh, 340px);
+  pointer-events: none;
+  background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 320' preserveAspectRatio='none'%3E%3Cpath fill='%2389c7db' fill-opacity='0.20' d='M0 190 L110 120 205 172 330 96 455 168 560 116 690 178 810 100 930 170 1050 124 1170 180 1290 138 1440 186 1440 320 0 320 Z'/%3E%3Cpath fill='%232f6547' fill-opacity='0.16' d='M0 232 L140 172 280 216 420 158 560 210 700 152 840 208 980 164 1120 214 1280 176 1440 218 1440 320 0 320 Z'/%3E%3Cpath fill='%23214734' fill-opacity='0.20' d='M0 272 L60 252 90 268 130 240 170 266 220 246 260 270 320 244 370 268 430 250 470 272 540 248 590 270 650 252 700 274 760 250 820 272 880 254 930 274 990 252 1050 272 1110 250 1170 272 1230 254 1290 274 1350 252 1440 270 1440 320 0 320 Z'/%3E%3C/svg%3E");
+  background-size: 100% 100%;
+  background-repeat: no-repeat;
 }
 
 img,
@@ -196,7 +212,7 @@ strong {
   font-weight: 700;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: var(--blue);
+  color: var(--forest);
 }
 
 .section-header {
@@ -295,15 +311,15 @@ strong {
   padding: 0 22px;
   border: none;
   border-radius: var(--pill);
-  background: var(--ink);
-  color: #f6f9fc;
+  background: linear-gradient(180deg, var(--forest), var(--forest-deep));
+  color: #f4faf1;
   font-family: var(--font);
   font-size: var(--fs-md);
   font-weight: 600;
   line-height: 1;
   letter-spacing: -0.01em;
   cursor: pointer;
-  box-shadow: 0 10px 24px -8px rgba(14, 27, 44, 0.42);
+  box-shadow: 0 10px 24px -8px rgba(33, 71, 52, 0.5);
   transition:
     transform var(--fast) var(--ease),
     box-shadow var(--med) var(--ease),
@@ -312,7 +328,7 @@ strong {
 
 .button:hover {
   transform: translateY(-1px);
-  box-shadow: 0 14px 30px -8px rgba(14, 27, 44, 0.5);
+  box-shadow: 0 14px 30px -8px rgba(33, 71, 52, 0.58);
 }
 
 .button:active {
@@ -755,9 +771,9 @@ legend {
   width: 30px;
   height: 30px;
   border-radius: 9px;
-  background: var(--ink);
+  background: linear-gradient(180deg, var(--forest), var(--forest-deep));
   color: #fff;
-  box-shadow: 0 4px 10px -2px rgba(14, 27, 44, 0.4);
+  box-shadow: 0 4px 10px -2px rgba(33, 71, 52, 0.45);
 }
 
 .topbar__name {
@@ -800,8 +816,8 @@ legend {
 }
 
 .topbar__nav a.is-active {
-  color: var(--ink);
-  background: rgba(14, 27, 44, 0.08);
+  color: var(--forest-deep);
+  background: rgba(47, 101, 71, 0.12);
 }
 
 .topbar__edit {
@@ -878,12 +894,12 @@ legend {
   content: "";
   position: absolute;
   z-index: -1;
-  width: 520px;
-  height: 520px;
-  right: -160px;
-  top: -300px;
+  width: 560px;
+  height: 560px;
+  right: -140px;
+  top: -320px;
   border-radius: 50%;
-  background: radial-gradient(circle, rgba(47, 109, 168, 0.16), transparent 66%);
+  background: radial-gradient(circle, rgba(244, 200, 76, 0.3), rgba(137, 199, 219, 0.14) 55%, transparent 72%);
   pointer-events: none;
 }
 
@@ -930,8 +946,8 @@ legend {
   inset: 0;
   border-radius: 50%;
   background: conic-gradient(
-    var(--blue) 0 var(--progress),
-    rgba(14, 27, 44, 0.08) var(--progress) 100%
+    var(--forest) 0 var(--progress),
+    rgba(74, 58, 32, 0.1) var(--progress) 100%
   );
   -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 11px), #000 calc(100% - 10px));
   mask: radial-gradient(farthest-side, transparent calc(100% - 11px), #000 calc(100% - 10px));
@@ -1188,8 +1204,8 @@ legend {
 
 .region-panel {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: var(--s2) var(--s6);
+  grid-template-columns: 1fr;
+  gap: var(--s1);
   padding: var(--s5);
   border: 1px solid var(--hairline);
   border-radius: var(--rad-l);
@@ -1201,10 +1217,21 @@ legend {
 
 .region-row {
   display: grid;
-  grid-template-columns: 96px 1fr auto;
+  grid-template-columns: 130px 1fr 52px;
   align-items: center;
-  gap: var(--s3);
+  gap: var(--s4);
   min-height: 32px;
+}
+
+.region-row > span:first-child,
+.region-row strong {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.region-row strong {
+  text-align: right;
 }
 
 .region-row > span:first-child {
@@ -1231,7 +1258,7 @@ legend {
   position: absolute;
   inset: 0 auto 0 0;
   border-radius: var(--pill);
-  background: linear-gradient(90deg, var(--sky), var(--blue));
+  background: linear-gradient(90deg, var(--mint), var(--forest));
   transition: width 550ms var(--ease);
 }
 
@@ -1354,11 +1381,12 @@ legend {
 /* place markers */
 
 .place-marker {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 2px;
-  padding: 4px;
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
   border: none;
   background: transparent;
   cursor: pointer;
@@ -1395,6 +1423,10 @@ legend {
 
 .place-marker__label {
   display: none;
+  position: absolute;
+  top: calc(100% + 1px);
+  left: 50%;
+  transform: translateX(-50%);
   padding: 3px 8px;
   border-radius: var(--pill);
   background: var(--frost-strong);
@@ -1879,7 +1911,8 @@ legend {
 
 .achievement {
   border-radius: var(--rad-m);
-  animation: rise var(--slow) var(--ease) both;
+  animation: tile-in 360ms var(--ease) both;
+  animation-delay: calc(var(--i, 0) * 22ms);
 }
 
 .achievement__button {
@@ -2090,7 +2123,7 @@ legend {
 
 .editor-tabs a.is-active {
   color: #fff;
-  background: var(--ink);
+  background: linear-gradient(180deg, var(--forest), var(--forest-deep));
 }
 
 .editor-tools {
@@ -2238,6 +2271,17 @@ legend {
 }
 
 /* 17. MOTION ------------------------------------------------------------------------ */
+
+@keyframes tile-in {
+  from {
+    opacity: 0;
+    transform: scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
 
 @keyframes rise {
   from {
