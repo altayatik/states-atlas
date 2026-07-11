@@ -10,14 +10,14 @@ import { StatusLegend } from './StatusLegend'
 import { isMetroVisited, isParkVisited } from '../utils/places'
 
 const DEFAULT_BOUNDS = [
-  [-142, 22],
+  [-146, 22],
   [-52, 59],
 ]
 
 const SELECTED_VIEW_BOUNDS = {
   AK: [
-    [-170, 51],
-    [-129, 72],
+    [-146, 29],
+    [-130, 40],
   ],
   HI: [
     [-130, 22],
@@ -69,7 +69,18 @@ const stateFillOpacity = [
 const HAWAII_SOURCE_CENTER = [-157.35, 20.75]
 const HAWAII_DISPLAY_CENTER = [-124.15, 25.55]
 const HAWAII_DISPLAY_SCALE = 2.1
+const ALASKA_SOURCE_CENTER = [-152.4, 63.6]
+const ALASKA_DISPLAY_CENTER = [-138.3, 34.7]
+const ALASKA_DISPLAY_SCALE = 0.34
 const canadianSubdivisionCodes = new Set(CANADA_SUBDIVISION_CODES)
+
+function transformAlaskaCoordinate(coordinate) {
+  const [lng, lat] = coordinate
+  return [
+    ALASKA_DISPLAY_CENTER[0] + (lng - ALASKA_SOURCE_CENTER[0]) * ALASKA_DISPLAY_SCALE,
+    ALASKA_DISPLAY_CENTER[1] + (lat - ALASKA_SOURCE_CENTER[1]) * ALASKA_DISPLAY_SCALE,
+  ]
+}
 
 function transformHawaiiCoordinate(coordinate) {
   const [lng, lat] = coordinate
@@ -89,6 +100,19 @@ function transformHawaiiGeometry(geometry) {
     ...geometry,
     coordinates: transformGeometryCoordinates(geometry.coordinates, transformHawaiiCoordinate),
   }
+}
+
+function transformAlaskaGeometry(geometry) {
+  return {
+    ...geometry,
+    coordinates: transformGeometryCoordinates(geometry.coordinates, transformAlaskaCoordinate),
+  }
+}
+
+function transformInsetCoordinate(coordinate, stateCodes = []) {
+  if (stateCodes.includes('AK')) return transformAlaskaCoordinate(coordinate)
+  if (stateCodes.includes('HI')) return transformHawaiiCoordinate(coordinate)
+  return coordinate
 }
 
 function getGeometryCoordinates(geometry) {
@@ -125,6 +149,23 @@ function getGeometryCenter(geometry) {
   ]
 }
 
+function getGeometryBounds(geometry) {
+  const coordinates = getGeometryCoordinates(geometry).filter((coordinate) => (
+    Array.isArray(coordinate)
+    && Number.isFinite(coordinate[0])
+    && Number.isFinite(coordinate[1])
+  ))
+  if (!coordinates.length) return null
+
+  return coordinates.reduce((acc, [lng, lat]) => ([
+    [Math.min(acc[0][0], lng), Math.min(acc[0][1], lat)],
+    [Math.max(acc[1][0], lng), Math.max(acc[1][1], lat)],
+  ]), [
+    [Number.POSITIVE_INFINITY, Number.POSITIVE_INFINITY],
+    [Number.NEGATIVE_INFINITY, Number.NEGATIVE_INFINITY],
+  ])
+}
+
 function buildPlaceFeature(item, type, states, selectedPlaceType, selectedPlaceId, selectedStateCode) {
   const selected = selectedPlaceType === type && selectedPlaceId === item.id
   const visited = type === 'metro'
@@ -134,8 +175,8 @@ function buildPlaceFeature(item, type, states, selectedPlaceType, selectedPlaceI
   const isCanadianPlace = item.country === 'canada' || item.stateCodes?.some((code) => canadianSubdivisionCodes.has(code))
   const canShowForSelectedState = stateSelected && !isCanadianPlace
   const sourceCenter = getGeometryCenter(item.geometry)
-  const center = sourceCenter && item.stateCodes?.includes('HI')
-    ? transformHawaiiCoordinate(sourceCenter)
+  const center = sourceCenter
+    ? transformInsetCoordinate(sourceCenter, item.stateCodes)
     : sourceCenter
   if (!selected && !visited && !canShowForSelectedState) return null
   if (!center) return null
@@ -154,21 +195,51 @@ function prefersReducedMotion() {
   return window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
 }
 
-function fitDefaultBounds(map) {
+function getMapPadding(element, mode = 'default') {
+  const width = element?.clientWidth ?? window.innerWidth
+  const isMobile = width < 680
+
+  if (mode === 'selected') {
+    return isMobile
+      ? { bottom: 34, left: 26, right: 26, top: 34 }
+      : { bottom: 58, left: 70, right: 70, top: 58 }
+  }
+
+  return isMobile
+    ? { bottom: 24, left: 16, right: 16, top: 24 }
+    : { bottom: 42, left: 52, right: 52, top: 42 }
+}
+
+function fitDefaultBounds(map, element) {
   map.fitBounds(DEFAULT_BOUNDS, {
     duration: prefersReducedMotion() ? 0 : 700,
-    padding: 34,
+    maxZoom: 3.2,
+    padding: getMapPadding(element),
   })
 }
 
-function fitInsetStateBounds(map, code) {
+function fitInsetStateBounds(map, code, element) {
   const bounds = SELECTED_VIEW_BOUNDS[code]
   if (!bounds) return
 
   map.fitBounds(bounds, {
     duration: prefersReducedMotion() ? 0 : 750,
-    padding: 54,
+    maxZoom: 4.5,
+    padding: getMapPadding(element, 'selected'),
   })
+}
+
+function fitFeatureBounds(map, featureItem, element) {
+  const bounds = getGeometryBounds(featureItem?.geometry)
+  if (!bounds) return false
+
+  map.fitBounds(bounds, {
+    duration: prefersReducedMotion() ? 0 : 720,
+    maxZoom: 4.9,
+    padding: getMapPadding(element, 'selected'),
+  })
+
+  return true
 }
 
 function syncViewportDataset(map, element) {
@@ -246,7 +317,11 @@ export function TravelMap({
             hovered: hoveredStateCode === code,
             hasSelection: Boolean(selectedStateCode),
           },
-          geometry: code === 'HI' ? transformHawaiiGeometry(item.geometry) : item.geometry,
+          geometry: code === 'AK'
+            ? transformAlaskaGeometry(item.geometry)
+            : code === 'HI'
+              ? transformHawaiiGeometry(item.geometry)
+              : item.geometry,
         }
       })
       .filter(Boolean),
@@ -290,7 +365,7 @@ export function TravelMap({
         [-45, 73],
       ],
       maxZoom: 8.5,
-      minZoom: 1.6,
+      minZoom: 1.05,
       pitchWithRotate: false,
       scrollZoom: true,
       style: MAP_STYLE,
@@ -299,8 +374,21 @@ export function TravelMap({
     })
 
     mapRef.current = map
+    map.touchZoomRotate.disableRotation()
+    map.addControl(new maplibregl.NavigationControl({
+      showCompass: false,
+      showZoom: true,
+      visualizePitch: false,
+    }), 'top-right')
 
     const syncViewport = () => syncViewportDataset(map, mapContainerRef.current)
+    const resizeMap = () => {
+      map.resize()
+      syncViewport()
+    }
+    const resizeObserver = new ResizeObserver(resizeMap)
+    resizeObserver.observe(mapContainerRef.current)
+    window.addEventListener('resize', resizeMap)
 
     map.on('load', () => {
       const latest = latestMapDataRef.current
@@ -369,7 +457,7 @@ export function TravelMap({
         map.getCanvas().style.cursor = ''
       })
 
-      fitDefaultBounds(map)
+      fitDefaultBounds(map, mapContainerRef.current)
       setMapZoom(map.getZoom())
       syncViewport()
       setIsMapReady(true)
@@ -383,6 +471,8 @@ export function TravelMap({
     map.on('move', syncViewport)
 
     return () => {
+      resizeObserver.disconnect()
+      window.removeEventListener('resize', resizeMap)
       placeMarkersRef.current.forEach((marker) => marker.remove())
       placeMarkersRef.current = []
       map.remove()
@@ -399,10 +489,16 @@ export function TravelMap({
 
   useEffect(() => {
     const map = mapRef.current
-    if (!map || !isMapReady || !SELECTED_VIEW_BOUNDS[selectedStateCode]) return
+    if (!map || !isMapReady || !selectedStateCode) return
 
-    fitInsetStateBounds(map, selectedStateCode)
-  }, [isMapReady, selectedStateCode])
+    if (SELECTED_VIEW_BOUNDS[selectedStateCode]) {
+      fitInsetStateBounds(map, selectedStateCode, mapContainerRef.current)
+      return
+    }
+
+    const selectedFeature = statesGeoJson.features.find((item) => item.properties?.code === selectedStateCode)
+    fitFeatureBounds(map, selectedFeature, mapContainerRef.current)
+  }, [isMapReady, selectedStateCode, statesGeoJson])
 
   useEffect(() => {
     const map = mapRef.current
@@ -412,10 +508,10 @@ export function TravelMap({
     placeMarkersRef.current = []
 
     placeFeatures.forEach((place) => {
-      const showPin = place.selected || place.stateSelected || mapZoom >= 3.55
+      const showPin = place.selected || place.stateSelected || mapZoom >= 4.15
       if (!showPin) return
 
-      const showLabel = place.selected || place.stateSelected || mapZoom >= 4.35
+      const showLabel = place.selected || place.stateSelected || mapZoom >= 4.85
       const button = document.createElement('button')
       button.type = 'button'
       button.className = [
@@ -443,18 +539,32 @@ export function TravelMap({
     })
   }, [isMapReady, mapZoom, onSelectMetro, onSelectPark, placeFeatures])
 
+  const selectedStateName = stateByCode.get(selectedStateCode)?.name
+  const handleResetMap = () => {
+    const map = mapRef.current
+    if (map) fitDefaultBounds(map, mapContainerRef.current)
+    onSelectState?.('')
+  }
+
   return (
-    <section className="map-card map-card--central" aria-labelledby="map-title">
-      <div className="section-heading map-heading">
+    <section className="map-card map-card--central glass-panel" aria-labelledby="map-title">
+      <div className="section-header map-heading">
         <div>
           <p className="eyebrow">State atlas</p>
           <h2 id="map-title">Explore the map</h2>
         </div>
+        <button className="button button--secondary button--small" type="button" onClick={handleResetMap}>
+          Reset map
+        </button>
       </div>
 
       <p className="map-hint">Pinch or scroll to explore. Zoom in to reveal cities and parks.</p>
 
       <div className="map-shell map-shell--maplibre">
+        <div className="map-overlay-panel glass-panel" aria-live="polite">
+          <strong>{selectedStateName || 'North America framed'}</strong>
+          <span>{selectedStateName ? 'Selected state fitted' : 'Pins appear as you zoom or select a state'}</span>
+        </div>
         <div
           ref={mapContainerRef}
           className="maplibre-atlas"

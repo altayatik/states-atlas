@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { AtlasHeader } from './components/AtlasHeader'
+import { OverviewSection } from './components/OverviewSection'
 import { StatsCards } from './components/StatsCards'
 import { TravelMap } from './components/TravelMap'
 import { StateDetailPanel } from './components/StateDetailPanel'
@@ -90,7 +91,10 @@ function getIsEditorRoute() {
 
 function getActiveSection() {
   if (typeof window === 'undefined') return 'states'
+  if (window.location.hash.startsWith('#/overview')) return 'overview'
+  if (window.location.hash.startsWith('#/states')) return 'states'
   if (window.location.hash.startsWith('#/parks')) return 'parks'
+  if (window.location.hash.startsWith('#/achievements')) return 'achievements'
   return 'states'
 }
 
@@ -205,7 +209,10 @@ function App() {
     [parkRankings, states],
   )
   const selectedState = atlasStates.find((state) => state.code === selectedStateCode)
-  const stats = useMemo(() => getStats(atlasStates), [atlasStates])
+  const stats = useMemo(() => ({
+    ...getStats(atlasStates),
+    parksRanked: parkRankings.length,
+  }), [atlasStates, parkRankings.length])
   const regions = useMemo(() => getRegionalProgress(atlasStates), [atlasStates])
   const achievements = useMemo(() => evaluateAchievements(atlasStates), [atlasStates])
 
@@ -329,23 +336,25 @@ function App() {
   if (isEditorRoute) {
     return (
       <div className="app-shell app-shell--editor">
-        {(isLoadingEntries || isLoadingParks) && <div className="sync-banner">Loading atlas entries...</div>}
+        {(isLoadingEntries || isLoadingParks) && <div className="sync-banner glass-panel">Loading atlas entries...</div>}
         <main className="editor-page">
-          <header className="editor-header">
+          <header className="editor-header glass-panel">
             <div>
               <p className="eyebrow">Private dashboard</p>
               <h1>Travel Atlas Editor</h1>
-              <p>Update state memories and National Parks rankings from one shared edit area.</p>
+              <p>Update state memories and National Parks rankings from one shared, admin-only studio.</p>
             </div>
-            <button className="button button--secondary" type="button" onClick={goPublic}>
-              Back to public atlas
-            </button>
-            <button className="button button--secondary" type="button" onClick={handleEditorSignOut}>
-              Sign out
-            </button>
+            <div className="editor-header__actions">
+              <button className="button button--secondary" type="button" onClick={goPublic}>
+                Back to atlas
+              </button>
+              <button className="button button--ghost" type="button" onClick={handleEditorSignOut}>
+                Sign out
+              </button>
+            </div>
           </header>
 
-          <nav className="editor-tabs" aria-label="Editor sections">
+          <nav className="editor-tabs glass-nav" aria-label="Editor sections">
             <a className={activeEditorSection === 'states' ? 'is-active' : ''} href="#/edit?section=states">States</a>
             <a className={activeEditorSection === 'parks' ? 'is-active' : ''} href="#/edit?section=parks">National Parks</a>
           </nav>
@@ -372,43 +381,69 @@ function App() {
 
   return (
     <div className="app-shell">
-      <AtlasHeader />
+      <AtlasHeader stats={stats} />
       <TravelNav activeSection={activeSection} />
-      {isLoadingEntries && activeSection === 'states' && <div className="sync-banner">Loading atlas entries...</div>}
-      {isLoadingParks && activeSection === 'parks' && <div className="sync-banner">Loading park rankings...</div>}
+      {isLoadingEntries && ['overview', 'states', 'achievements'].includes(activeSection) && (
+        <div className="sync-banner glass-panel">Loading atlas entries...</div>
+      )}
+      {isLoadingParks && ['overview', 'parks'].includes(activeSection) && (
+        <div className="sync-banner glass-panel">Loading park rankings...</div>
+      )}
 
-      {activeSection === 'parks' ? (
+      {activeSection === 'overview' ? (
+        <OverviewSection
+          achievements={achievements}
+          parkRankings={parkRankings}
+          regions={regions}
+          states={atlasStates}
+          stats={stats}
+        />
+      ) : activeSection === 'parks' ? (
         <NationalParksSection
           activeScope={activeParkScope}
           isLoading={isLoadingParks}
           loadError={parksLoadError}
           rankings={parkRankings}
         />
+      ) : activeSection === 'achievements' ? (
+        <main className="public-page public-page--achievements">
+          <Achievements achievements={achievements} />
+        </main>
       ) : (
-        <>
-          <StatsCards regions={regions} stats={stats} />
-          <main>
-            <div className="atlas-layout">
-              <TravelMap
-                metros={metroAreas}
-                onSelectState={selectState}
-                onSelectMetro={selectMetro}
-                onSelectPark={selectPark}
-                parks={parkBoundaries}
-                selectedPlace={selectedPlace}
-                selectedStateCode={selectedStateCode}
-                states={atlasStates}
-              />
-              <StateDetailPanel
-                selectedItem={selectedPlace}
-                state={selectedState}
-                states={atlasStates}
-              />
-            </div>
+        <main className="public-page public-page--states">
+          <div className="atlas-layout">
+            <TravelMap
+              metros={metroAreas}
+              onSelectState={selectState}
+              onSelectMetro={selectMetro}
+              onSelectPark={selectPark}
+              parks={parkBoundaries}
+              selectedPlace={selectedPlace}
+              selectedStateCode={selectedStateCode}
+              states={atlasStates}
+            />
+            <StateDetailPanel
+              selectedItem={selectedPlace}
+              state={selectedState}
+              states={atlasStates}
+            />
+          </div>
 
-            <Achievements achievements={achievements} />
-          </main>
-        </>
+          <section className="map-first-hero glass-panel" aria-labelledby="map-first-title">
+            <div>
+              <p className="eyebrow">Travel pulse</p>
+              <h2 id="map-first-title">The map leads. The stats follow.</h2>
+              <p>The atlas now opens on the interactive map, with the glassy progress layer tucked underneath it instead of replacing it.</p>
+            </div>
+            <div className="map-first-hero__chips" aria-label="Map highlights">
+              <span>{stats.statesVisited}/{stats.statesTotal} states visited</span>
+              <span>{stats.citiesLogged} cities logged</span>
+              <span>{stats.parksMarked} parks mapped</span>
+            </div>
+          </section>
+
+          <StatsCards parkRankingsCount={parkRankings.length} regions={regions} stats={stats} />
+        </main>
       )}
     </div>
   )

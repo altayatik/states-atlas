@@ -7,11 +7,15 @@ import {
 import { getFirebaseAuth, isFirebaseConfigured } from './firebaseClient'
 
 export const ATLAS_ADMIN_EMAIL = 'altayatik01@gmail.com'
+export const ATLAS_ADMIN_EMAILS = [
+  ATLAS_ADMIN_EMAIL,
+  'aidima821@gmail.com',
+]
 
 export function isAtlasAdmin(user) {
   return Boolean(
     user
-      && user.email === ATLAS_ADMIN_EMAIL
+      && ATLAS_ADMIN_EMAILS.includes(user.email)
       && user.emailVerified,
   )
 }

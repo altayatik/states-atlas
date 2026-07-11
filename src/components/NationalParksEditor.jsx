@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { AlertTriangle, CheckCircle2, Loader2, Trash2, X } from 'lucide-react'
+import { AlertTriangle, CheckCircle2, Loader2, Save, Search, Trash2, X } from 'lucide-react'
 import {
   CUSTOM_PARK_VALUE,
   getOfficialParkByName,
@@ -7,7 +7,7 @@ import {
   getOfficialParksByCountry,
   officialParks,
 } from '../data/nationalParks'
-import { defaultParkScores, normalizeScores, scoreCategories } from '../utils/parkScoring'
+import { calculateTotal, defaultParkScores, normalizeScores, scoreCategories } from '../utils/parkScoring'
 
 function cloneRanking(ranking) {
   if (!ranking) return null
@@ -70,16 +70,30 @@ export function NationalParksEditor({ isLoading, onDelete, onSave, rankings }) {
   const [customParkName, setCustomParkName] = useState('')
   const [saveStatus, setSaveStatus] = useState('idle')
   const [formError, setFormError] = useState('')
+  const [rankingFilter, setRankingFilter] = useState('')
 
   const selectedRanking = useMemo(
     () => rankings.find((ranking) => ranking.id === selectedId),
     [rankings, selectedId],
   )
   const isDirty = Boolean(draft && serializeDraft(draft) !== savedSnapshot)
+  const isSaving = saveStatus === 'saving'
   const selectedParkValue = getSelectedParkValue(draft)
   const draftDisplayName = draft?.isCustom ? draft.parkName : getOfficialParkDisplayName(draft?.parkName)
   const usParkOptions = useMemo(() => getOfficialParksByCountry('us'), [])
   const canadaParkOptions = useMemo(() => getOfficialParksByCountry('canada'), [])
+  const filteredRankings = useMemo(() => {
+    const normalizedFilter = rankingFilter.trim().toLowerCase()
+    if (!normalizedFilter) return rankings
+
+    return rankings.filter((ranking) => {
+      const displayName = ranking.isCustom ? ranking.parkName : getOfficialParkDisplayName(ranking.parkName)
+      return ranking.id === selectedId
+        || displayName.toLowerCase().includes(normalizedFilter)
+        || ranking.parkCode?.toLowerCase().includes(normalizedFilter)
+        || ranking.state?.toLowerCase().includes(normalizedFilter)
+    })
+  }, [rankingFilter, rankings, selectedId])
 
   useEffect(() => {
     if (!selectedId || selectedId === 'new') return
@@ -234,6 +248,8 @@ export function NationalParksEditor({ isLoading, onDelete, onSave, rankings }) {
 
   const handleDelete = async () => {
     if (!draft?.id) return
+    const confirmed = window.confirm(`Delete the ranking for ${draftDisplayName || draft.parkName}? This cannot be undone.`)
+    if (!confirmed) return
 
     setFormError('')
     setSaveStatus('saving')
@@ -267,13 +283,22 @@ export function NationalParksEditor({ isLoading, onDelete, onSave, rankings }) {
 
   return (
     <>
-      <section className="editor-tools editor-tools--single" aria-label="National park picker">
+      <section className="editor-tools editor-tools--picker glass-panel" aria-label="National park picker">
+        <label className="search-field">
+          <span>Search rankings</span>
+          <Search size={17} aria-hidden="true" />
+          <input
+            placeholder="Type a park, code, or state"
+            value={rankingFilter}
+            onChange={(event) => setRankingFilter(event.target.value)}
+          />
+        </label>
         <label>
           Choose a park ranking to edit
           <select value={selectedId} onChange={handleRankingChange}>
             <option value="">Choose a ranking</option>
             <option value="new">Add a new park ranking</option>
-            {rankings.map((ranking) => (
+            {filteredRankings.map((ranking) => (
               <option key={ranking.id} value={ranking.id}>
                 {ranking.isCustom ? ranking.parkName : getOfficialParkDisplayName(ranking.parkName)} {ranking.parkCode ? `(${ranking.parkCode})` : ''}
               </option>
@@ -284,16 +309,17 @@ export function NationalParksEditor({ isLoading, onDelete, onSave, rankings }) {
 
       <section className="editor-select-panel" aria-label="Selected national park editor">
         {!draft ? (
-          <div className="editor-empty-state">
+          <div className="editor-empty-state glass-panel">
             <h2>{isLoading ? 'Loading park rankings...' : 'Choose a park ranking to start editing.'}</h2>
+            <p>Park scores, notes, visited dates, and honorable mentions save to Firestore.</p>
           </div>
         ) : (
-          <article className="editor-form-panel">
+          <article className="editor-form-panel editor-panel glass-panel">
             <div className="editor-form-panel__header">
               <div>
                 <p className="eyebrow">{draft.parkCode || (draft.isCustom ? 'Custom park' : 'National Park')}</p>
                 <h2>{draftDisplayName || 'New park ranking'}</h2>
-                <p>{draft.state}</p>
+                <p>{draft.state} · {calculateTotal(draft.scores)}/50 total score</p>
               </div>
               <div className="editor-form-panel__actions">
                 {statusText && (
@@ -302,6 +328,15 @@ export function NationalParksEditor({ isLoading, onDelete, onSave, rankings }) {
                     {statusText}
                   </span>
                 )}
+                <button
+                  className="button"
+                  disabled={!isDirty || isSaving}
+                  type="button"
+                  onClick={saveDraftIfNeeded}
+                >
+                  {isSaving ? <Loader2 className="spin-icon" size={17} aria-hidden="true" /> : <Save size={17} aria-hidden="true" />}
+                  Save
+                </button>
                 {draft.id && (
                   <button aria-label="Delete park ranking" className="icon-button icon-button--danger" type="button" onClick={handleDelete}>
                     <Trash2 size={18} aria-hidden="true" />

@@ -97,7 +97,7 @@ Fields:
 Rules live in `firestore.rules`.
 
 - Public reads are allowed for `stateTravelEntries` and `parkRankings`.
-- Creates, updates, and deletes are allowed only for the verified Google account `altayatik01@gmail.com`.
+- Creates, updates, and deletes are allowed only for verified Google admin accounts: `altayatik01@gmail.com` and `aidima821@gmail.com`.
 - All other reads/writes are denied.
 
 Deploy rules and hosting:
@@ -136,7 +136,7 @@ Open:
 https://altayatik.com/atlas/#/edit
 ```
 
-Sign in with Google. Only `altayatik01@gmail.com` can write because Firestore rules enforce that email. Other accounts can sign in but cannot access the editor or write data.
+Sign in with Google. Only `altayatik01@gmail.com` and `aidima821@gmail.com` can write because Firestore rules enforce those emails. Other accounts can sign in but cannot access the editor or write data.
 
 ## Supabase Backup
 
@@ -153,4 +153,4 @@ The folder is ignored and should not be committed.
 
 If Google sign-in fails, confirm the Google provider is enabled in Firebase Auth and `altayatik.com` is an authorized domain.
 
-If saving fails with `This account is not allowed to edit this atlas.`, confirm you are signed in as `altayatik01@gmail.com` and that the deployed `firestore.rules` file contains that email.
+If saving fails with `This account is not allowed to edit this atlas.`, confirm you are signed in as `altayatik01@gmail.com` or `aidima821@gmail.com` and that the deployed `firestore.rules` file contains that email.

@@ -59,12 +59,13 @@ export function Achievements({ achievements }) {
     : null
 
   return (
-    <section className="content-section" aria-labelledby="achievements-title">
-      <div className="section-heading">
+    <section className="content-section achievements-section" aria-labelledby="achievements-title">
+      <div className="section-header">
         <div>
           <p className="eyebrow">Quest board</p>
           <h2 id="achievements-title">Achievement badges</h2>
         </div>
+        <p>Unlocked tiles stay vivid, locked ones stay quiet, and each badge keeps its progress available on tap.</p>
       </div>
       <div className="achievement-grid">
         {orderedAchievements.map((achievement) => {
@@ -83,6 +84,7 @@ export function Achievements({ achievements }) {
             >
               <button
                 className="achievement__button"
+                aria-label={`${achievement.name}: ${achievement.unlocked ? 'Unlocked' : 'Locked'}, ${achievement.progressText}`}
                 type="button"
                 onClick={() => setSelectedId(achievement.id)}
               >
@@ -110,7 +112,7 @@ export function Achievements({ achievements }) {
           <article
             aria-labelledby="achievement-modal-title"
             aria-modal="true"
-            className="achievement-modal"
+            className="achievement-modal glass-panel"
             role="dialog"
             style={{ '--achievement-accent': selectedAchievement.accent }}
             onMouseDown={(event) => event.stopPropagation()}

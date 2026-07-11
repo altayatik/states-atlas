@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { AlertTriangle, CheckCircle2, Loader2, X } from 'lucide-react'
+import { AlertTriangle, CheckCircle2, Loader2, Save, Search, X } from 'lucide-react'
 import { BADGE_LABELS, STATUSES, STATUS_LABELS } from '../data/states'
 import { getCityOptionsForState, getParkOptionsForState } from '../data/stateTravelOptions'
 import { formatStatus } from '../utils/formatters'
@@ -70,9 +70,22 @@ export function AtlasEditor({ hideHeader = false, states, onBack, onSave }) {
   const [formError, setFormError] = useState('')
   const [customCity, setCustomCity] = useState('')
   const [customPark, setCustomPark] = useState('')
+  const [stateFilter, setStateFilter] = useState('')
 
   const selectedState = states.find((state) => state.code === selectedCode)
   const isDirty = Boolean(draft && serializeDraft(draft) !== savedSnapshot)
+  const isSaving = saveStatus === 'saving'
+  const filteredStates = useMemo(() => {
+    const normalizedFilter = stateFilter.trim().toLowerCase()
+    if (!normalizedFilter) return states
+
+    return states.filter((state) => (
+      state.code === selectedCode
+      || state.name.toLowerCase().includes(normalizedFilter)
+      || state.code.toLowerCase().includes(normalizedFilter)
+      || formatStatus(state.status).toLowerCase().includes(normalizedFilter)
+    ))
+  }, [selectedCode, stateFilter, states])
 
   const stateCityOptions = useMemo(
     () => getCityOptionsForState(draft?.code),
@@ -246,12 +259,21 @@ export function AtlasEditor({ hideHeader = false, states, onBack, onSave }) {
         </header>
       )}
 
-      <section className="editor-tools editor-tools--single" aria-label="State picker">
+      <section className="editor-tools editor-tools--picker glass-panel" aria-label="State picker">
+        <label className="search-field">
+          <span>Search states</span>
+          <Search size={17} aria-hidden="true" />
+          <input
+            placeholder="Type a state, code, or status"
+            value={stateFilter}
+            onChange={(event) => setStateFilter(event.target.value)}
+          />
+        </label>
         <label>
           Choose a state or territory to edit
           <select value={selectedCode} onChange={handleStateChange}>
             <option value="">Choose a state or territory</option>
-            {states.map((state) => (
+            {filteredStates.map((state) => (
               <option key={state.code} value={state.code}>
                 {state.name} — {formatStatus(state.status)}
               </option>
@@ -262,16 +284,17 @@ export function AtlasEditor({ hideHeader = false, states, onBack, onSave }) {
 
       <section className="editor-select-panel" aria-label="Selected state editor">
         {!draft ? (
-          <div className="editor-empty-state">
+          <div className="editor-empty-state glass-panel">
             <h2>Choose a state or territory to start editing.</h2>
+            <p>The editor keeps the form compact until a state is selected.</p>
           </div>
         ) : (
-          <article className="editor-form-panel">
+          <article className="editor-form-panel editor-panel glass-panel">
             <div className="editor-form-panel__header">
               <div>
                 <p className="eyebrow">{selectedState?.code}</p>
                 <h2>{selectedState?.name}</h2>
-                <p>{formatStatus(draft.status)}</p>
+                <p>{formatStatus(draft.status)} · {draft.citiesVisited.length} cities · {draft.parksVisited.length} parks</p>
               </div>
               <div className="editor-form-panel__actions">
                 {statusText && (
@@ -280,6 +303,15 @@ export function AtlasEditor({ hideHeader = false, states, onBack, onSave }) {
                     {statusText}
                   </span>
                 )}
+                <button
+                  className="button"
+                  disabled={!isDirty || isSaving}
+                  type="button"
+                  onClick={saveDraftIfNeeded}
+                >
+                  {isSaving ? <Loader2 className="spin-icon" size={17} aria-hidden="true" /> : <Save size={17} aria-hidden="true" />}
+                  Save
+                </button>
                 <button aria-label="Close editor and save changes" className="icon-button" type="button" onClick={handleClose}>
                   <X size={20} aria-hidden="true" />
                 </button>

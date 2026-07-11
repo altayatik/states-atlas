@@ -4,7 +4,10 @@ service cloud.firestore {
   match /databases/{database}/documents {
     function isAtlasAdmin() {
       return request.auth != null
-        && request.auth.token.email == "altayatik01@gmail.com"
+        && (
+          request.auth.token.email == "altayatik01@gmail.com"
+          || request.auth.token.email == "aidima821@gmail.com"
+        )
         && request.auth.token.email_verified == true;
     }
 

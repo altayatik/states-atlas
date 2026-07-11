@@ -13,7 +13,9 @@ dist-ssr
 *.local
 .env
 .env.local
+.env.*
 .env.*.local
+!.env.example
 *service-account*.json
 firebase-debug.log
 firebase-debug.*.log

@@ -13,7 +13,7 @@ export function StateDetailPanel({ selectedItem, state, states = [], showEdit = 
     const isPark = type === 'park'
 
     return (
-      <aside className="detail-panel detail-panel--place" aria-labelledby="place-detail-title">
+      <aside className="detail-panel detail-panel--place glass-panel" aria-labelledby="place-detail-title">
         <div className="detail-panel__header">
           <div>
             <p className="eyebrow">{isPark ? 'National park' : 'City area'}</p>
@@ -44,8 +44,9 @@ export function StateDetailPanel({ selectedItem, state, states = [], showEdit = 
 
   if (!state) {
     return (
-      <aside className="detail-panel detail-panel--empty">
+      <aside className="detail-panel detail-panel--empty glass-panel">
         <h2>Pick a state or territory to explore.</h2>
+        <p>Selection details, memories, cities, and parks will settle here while the map stays open.</p>
       </aside>
     )
   }
@@ -61,7 +62,7 @@ export function StateDetailPanel({ selectedItem, state, states = [], showEdit = 
   )
 
   return (
-    <aside className="detail-panel" aria-labelledby="state-detail-title">
+    <aside className="detail-panel glass-panel" aria-labelledby="state-detail-title">
       <div className="detail-panel__header">
         <div>
           <p className="eyebrow">{state.kind === 'country' ? 'Territory' : formatStatus(state.status)}</p>

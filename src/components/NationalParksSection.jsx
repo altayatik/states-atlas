@@ -1,4 +1,5 @@
-import { CalendarDays, Crown, MapPin, Mountain, Sparkles } from 'lucide-react'
+import { useMemo, useState } from 'react'
+import { ArrowDownUp, CalendarDays, Crown, MapPin, Mountain, Search, Sparkles } from 'lucide-react'
 import {
   canadianNationalParks,
   getOfficialParkCountry,
@@ -26,6 +27,12 @@ function formatVisitedDate(visitedDate) {
   }).format(date)
 }
 
+function getSortableDate(ranking) {
+  const date = ranking.visitedDate || ranking.updatedAt || ranking.createdAt
+  const timestamp = new Date(date).getTime()
+  return Number.isNaN(timestamp) ? 0 : timestamp
+}
+
 function ParkRankingCard({ isTied, rank, ranking }) {
   const total = calculateTotal(ranking.scores)
   const average = calculateAverage(ranking.scores)
@@ -37,16 +44,19 @@ function ParkRankingCard({ isTied, rank, ranking }) {
   const displayName = ranking.isCustom ? ranking.parkName : getOfficialParkDisplayName(ranking.parkName)
 
   return (
-    <details className="park-ranking-card">
-      <summary className="park-ranking-summary">
+    <article className="park-ranking-card glass-card">
+      <div className="park-ranking-card__top">
         <span className={`park-rank-badge park-rank-badge--${rankTone}`} aria-label={`Rank ${rank}`}>
-          <span>#{rank}</span>
-          {ranking.honorableMention && <Crown size={15} aria-label="Honorable mention" />}
+          #{rank}
         </span>
 
-        <span className="park-ranking-summary__main">
-          <span className="park-ranking-name">{displayName}</span>
-          <span className="park-ranking-meta">
+        <div className="park-ranking-card__title">
+          <p className="eyebrow">
+            <Mountain size={15} aria-hidden="true" />
+            {ranking.parkCode || 'Travel ranking'}
+          </p>
+          <h3>{displayName}</h3>
+          <div className="park-ranking-meta">
             {ranking.state && (
               <span>
                 <MapPin size={14} aria-hidden="true" />
@@ -59,58 +69,57 @@ function ParkRankingCard({ isTied, rank, ranking }) {
                 {visitedLabel}
               </span>
             )}
-          </span>
-        </span>
-
-        <span className="park-ranking-summary__tags">
-          <span className="travel-tag travel-tag--score">
-            {total}/50
-          </span>
-          <span className="travel-tag travel-tag--best">
-            <Sparkles size={14} aria-hidden="true" />
-            {bestFor}
-          </span>
-          {isTied && <span className="travel-tag">Tied</span>}
-          {ranking.honorableMention && (
-            <span className="travel-tag travel-tag--honorable">
-              <Crown size={14} aria-hidden="true" />
-              Honorable mention
-            </span>
-          )}
-        </span>
-      </summary>
-
-      <div className="park-ranking-card__details">
-        <div className="park-score-summary">
-          <span>Average {average.toFixed(1)}/10</span>
-          <span>Top score: {topCategoryLabel} · {topScore}/10</span>
+          </div>
         </div>
 
-        <dl className="park-score-grid">
-          {scoreCategories.map((category) => {
-            const score = ranking.scores[category.key]
-            const tone = getScoreTone(score)
-
-            return (
-              <div
-                className="park-score"
-                key={category.key}
-                style={{
-                  '--score-bg': tone.background,
-                  '--score-color': tone.color,
-                  '--score-text': tone.text,
-                }}
-              >
-                <dt>{category.label}</dt>
-                <dd>{score}</dd>
-              </div>
-            )
-          })}
-        </dl>
-
-        {ranking.notes && <p className="park-notes">{ranking.notes}</p>}
+        <div className="park-total-score" aria-label={`Total score ${total} out of 50`}>
+          <strong>{total}</strong>
+          <span>/50</span>
+        </div>
       </div>
-    </details>
+
+      <div className="park-ranking-tags">
+        <span className="travel-tag travel-tag--best">
+          <Sparkles size={14} aria-hidden="true" />
+          {bestFor}
+        </span>
+        <span className="travel-tag">Average {average.toFixed(1)}/10</span>
+        <span className="travel-tag">Top: {topCategoryLabel} · {topScore}/10</span>
+        {isTied && <span className="travel-tag">Tied score</span>}
+        {ranking.honorableMention && (
+          <span className="travel-tag travel-tag--honorable">
+            <Crown size={14} aria-hidden="true" />
+            Honorable mention
+          </span>
+        )}
+      </div>
+
+      <dl className="park-score-grid">
+        {scoreCategories.map((category) => {
+          const score = ranking.scores[category.key]
+          const tone = getScoreTone(score)
+
+          return (
+            <div
+              className="park-score"
+              key={category.key}
+              style={{
+                '--score-bg': tone.background,
+                '--score-color': tone.color,
+                '--score-text': tone.text,
+                '--score-width': `${score * 10}%`,
+              }}
+            >
+              <dt>{category.label}</dt>
+              <dd>{score}</dd>
+              <span aria-hidden="true" />
+            </div>
+          )
+        })}
+      </dl>
+
+      {ranking.notes && <p className="park-notes">{ranking.notes}</p>}
+    </article>
   )
 }
 
@@ -137,7 +146,7 @@ function filterRankingsByScope(rankings, activeScope) {
 function CanadaParkGuide() {
   return (
     <section className="canada-park-guide" aria-labelledby="canada-park-guide-title">
-      <div className="section-heading section-heading--compact">
+      <div className="section-header section-header--compact">
         <div>
           <p className="eyebrow">Reference list</p>
           <h3 id="canada-park-guide-title">Canadian parks to keep on the radar</h3>
@@ -145,7 +154,7 @@ function CanadaParkGuide() {
       </div>
       <div className="canada-park-grid">
         {canadianNationalParks.map((park) => (
-          <article className="canada-park-card" key={park.parkCode}>
+          <article className="canada-park-card glass-card" key={park.parkCode}>
             <strong>{park.name}</strong>
             <span>{park.state}</span>
           </article>
@@ -155,28 +164,65 @@ function CanadaParkGuide() {
   )
 }
 
+function sortRows(rows, sortKey) {
+  if (sortKey === 'name') {
+    return [...rows].sort((a, b) => a.ranking.parkName.localeCompare(b.ranking.parkName))
+  }
+
+  if (sortKey === 'date') {
+    return [...rows].sort((a, b) => getSortableDate(b.ranking) - getSortableDate(a.ranking))
+  }
+
+  return rows
+}
+
 export function NationalParksSection({ activeScope = 'us', isLoading, loadError, rankings }) {
-  const filteredRankings = filterRankingsByScope(rankings, activeScope)
-  const rankedRows = getRankedRows(filteredRankings)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [sortKey, setSortKey] = useState('score')
+  const [mentionFilter, setMentionFilter] = useState('all')
+
+  const filteredRankings = useMemo(
+    () => filterRankingsByScope(rankings, activeScope),
+    [activeScope, rankings],
+  )
+  const rankedRows = useMemo(() => getRankedRows(filteredRankings), [filteredRankings])
+  const visibleRows = useMemo(() => {
+    const normalizedQuery = searchQuery.trim().toLowerCase()
+    const searchedRows = rankedRows.filter(({ ranking }) => {
+      const displayName = ranking.isCustom ? ranking.parkName : getOfficialParkDisplayName(ranking.parkName)
+      const matchesSearch = !normalizedQuery
+        || displayName.toLowerCase().includes(normalizedQuery)
+        || ranking.state?.toLowerCase().includes(normalizedQuery)
+        || ranking.parkCode?.toLowerCase().includes(normalizedQuery)
+      const matchesMention = mentionFilter === 'all'
+        || (mentionFilter === 'honorable' && ranking.honorableMention)
+        || (mentionFilter === 'ranked' && !ranking.honorableMention)
+
+      return matchesSearch && matchesMention
+    })
+
+    return sortRows(searchedRows, sortKey)
+  }, [mentionFilter, rankedRows, searchQuery, sortKey])
   const showCanadaGuide = activeScope === 'canada' || activeScope === 'all'
   const emptyCopy = activeScope === 'canada'
     ? 'No Canadian parks ranked yet.'
     : 'No parks ranked yet.'
 
   return (
-    <main>
-      <section className="content-section parks-section" aria-live="polite">
-        <div className="section-heading">
+    <main className="public-page public-page--parks">
+      <section className="parks-section" aria-live="polite">
+        <div className="section-header">
           <div>
             <p className="eyebrow">
               <Mountain size={18} aria-hidden="true" />
-              Travel Atlas
+              National Parks
             </p>
-            <h2>National Parks</h2>
+            <h2>Ranked park journal</h2>
           </div>
+          <p>Every card reads from Firestore and scores scenery, visitor centers, facilities, trails, and roads out of 50.</p>
         </div>
 
-        <nav className="parks-subnav" aria-label="National parks views">
+        <nav className="parks-subnav glass-nav" aria-label="National parks views">
           {parkScopeLinks.map(([scope, label]) => (
             <a className={activeScope === scope ? 'is-active' : ''} href={`#/parks?scope=${scope}`} key={scope}>
               {label}
@@ -184,19 +230,54 @@ export function NationalParksSection({ activeScope = 'us', isLoading, loadError,
           ))}
         </nav>
 
+        <div className="parks-toolbar glass-panel" aria-label="Park ranking filters">
+          <label className="search-field">
+            <span>Search parks</span>
+            <Search size={17} aria-hidden="true" />
+            <input
+              placeholder="Search by park, state, or code"
+              value={searchQuery}
+              onChange={(event) => setSearchQuery(event.target.value)}
+            />
+          </label>
+          <label>
+            <span>Sort</span>
+            <ArrowDownUp size={17} aria-hidden="true" />
+            <select value={sortKey} onChange={(event) => setSortKey(event.target.value)}>
+              <option value="score">Score rank</option>
+              <option value="date">Visited or updated date</option>
+              <option value="name">Park name</option>
+            </select>
+          </label>
+          <label>
+            <span>Filter</span>
+            <Crown size={17} aria-hidden="true" />
+            <select value={mentionFilter} onChange={(event) => setMentionFilter(event.target.value)}>
+              <option value="all">All rankings</option>
+              <option value="honorable">Honorable mentions</option>
+              <option value="ranked">Ranked only</option>
+            </select>
+          </label>
+        </div>
+
         {loadError && <p className="form-error" role="alert">{loadError}</p>}
         {isLoading ? (
-          <div className="editor-empty-state">
+          <div className="editor-empty-state glass-panel">
             <h2>Loading park rankings...</h2>
           </div>
         ) : rankedRows.length === 0 ? (
-          <div className="editor-empty-state">
+          <div className="editor-empty-state glass-panel">
             <h2>{emptyCopy}</h2>
             <p>Rankings will appear here after they are saved in Firebase.</p>
           </div>
+        ) : visibleRows.length === 0 ? (
+          <div className="editor-empty-state glass-panel">
+            <h2>No parks match those filters.</h2>
+            <p>Try a broader search or switch the honorable mention filter.</p>
+          </div>
         ) : (
           <div className="park-rankings-list">
-            {rankedRows.map(({ isTied, rank, ranking }) => (
+            {visibleRows.map(({ isTied, rank, ranking }) => (
               <ParkRankingCard
                 isTied={isTied}
                 key={ranking.id}

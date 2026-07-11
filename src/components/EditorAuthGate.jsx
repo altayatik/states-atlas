@@ -1,15 +1,18 @@
-import { LogOut } from 'lucide-react'
-import { ATLAS_ADMIN_EMAIL } from '../services/editorAuth'
+import { LogIn, LogOut, ShieldCheck } from 'lucide-react'
+import { ATLAS_ADMIN_EMAILS } from '../services/editorAuth'
 
 export function EditorAuthGate({ error, isSigningIn, onBack, onSignIn, onSignOut, user }) {
-  const isWrongAccount = Boolean(user && user.email !== ATLAS_ADMIN_EMAIL)
+  const isWrongAccount = Boolean(user && !ATLAS_ADMIN_EMAILS.includes(user.email))
 
   return (
     <main className="editor-gate">
-      <section className="gate-card" aria-labelledby="editor-gate-title">
-        <p className="eyebrow">Private edit access</p>
-        <h1 id="editor-gate-title">Road Atlas Editor</h1>
-        <p>Only the atlas owner can edit trip memories and park rankings.</p>
+      <section className="gate-card glass-panel" aria-labelledby="editor-gate-title">
+        <p className="eyebrow">
+          <ShieldCheck size={17} aria-hidden="true" />
+          Private edit access
+        </p>
+        <h1 id="editor-gate-title">Travel Atlas Editor</h1>
+        <p>Sign in with Google to update state memories and National Parks rankings.</p>
 
         {user && (
           <div className="signed-in-card">
@@ -28,6 +31,7 @@ export function EditorAuthGate({ error, isSigningIn, onBack, onSignIn, onSignOut
         <div className="gate-actions">
           {!user ? (
             <button className="button" type="button" onClick={onSignIn} disabled={isSigningIn}>
+              <LogIn size={18} aria-hidden="true" />
               {isSigningIn ? 'Signing in...' : 'Sign in with Google to edit'}
             </button>
           ) : (
