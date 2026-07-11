@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from 'react'
-import { AtlasHeader } from './components/AtlasHeader'
 import { OverviewSection } from './components/OverviewSection'
 import { StatsCards } from './components/StatsCards'
 import { TravelMap } from './components/TravelMap'
@@ -90,12 +89,12 @@ function getIsEditorRoute() {
 }
 
 function getActiveSection() {
-  if (typeof window === 'undefined') return 'states'
+  if (typeof window === 'undefined') return 'overview'
   if (window.location.hash.startsWith('#/overview')) return 'overview'
   if (window.location.hash.startsWith('#/states')) return 'states'
   if (window.location.hash.startsWith('#/parks')) return 'parks'
   if (window.location.hash.startsWith('#/achievements')) return 'achievements'
-  return 'states'
+  return 'overview'
 }
 
 function getActiveParkScope() {
@@ -312,7 +311,7 @@ function App() {
 
   if (isEditorRoute && isCheckingEditorAuth) {
     return (
-      <div className="app-shell app-shell--editor">
+      <div className="shell shell--editor">
         <div className="sync-banner">Checking editor access...</div>
       </div>
     )
@@ -320,7 +319,7 @@ function App() {
 
   if (isEditorRoute && !isAtlasAdmin(editorUser)) {
     return (
-      <div className="app-shell app-shell--editor">
+      <div className="shell shell--editor">
         <EditorAuthGate
           error={gateError}
           isSigningIn={isSigningIn}
@@ -335,8 +334,8 @@ function App() {
 
   if (isEditorRoute) {
     return (
-      <div className="app-shell app-shell--editor">
-        {(isLoadingEntries || isLoadingParks) && <div className="sync-banner glass-panel">Loading atlas entries...</div>}
+      <div className="shell shell--editor">
+        {(isLoadingEntries || isLoadingParks) && <div className="sync-banner">Loading atlas entries...</div>}
         <main className="editor-page">
           <header className="editor-header glass-panel">
             <div>
@@ -380,14 +379,13 @@ function App() {
   }
 
   return (
-    <div className="app-shell">
-      <AtlasHeader stats={stats} />
+    <div className="shell">
       <TravelNav activeSection={activeSection} />
       {isLoadingEntries && ['overview', 'states', 'achievements'].includes(activeSection) && (
-        <div className="sync-banner glass-panel">Loading atlas entries...</div>
+        <div className="sync-banner">Loading atlas entries...</div>
       )}
       {isLoadingParks && ['overview', 'parks'].includes(activeSection) && (
-        <div className="sync-banner glass-panel">Loading park rankings...</div>
+        <div className="sync-banner">Loading park rankings...</div>
       )}
 
       {activeSection === 'overview' ? (
@@ -406,11 +404,20 @@ function App() {
           rankings={parkRankings}
         />
       ) : activeSection === 'achievements' ? (
-        <main className="public-page public-page--achievements">
+        <main className="page page--achievements">
           <Achievements achievements={achievements} />
         </main>
       ) : (
-        <main className="public-page public-page--states">
+        <main className="page page--states">
+          <div className="page-heading">
+            <div>
+              <p className="eyebrow">States &amp; provinces</p>
+              <h1>Where we&rsquo;ve been</h1>
+            </div>
+            <p className="page-heading__note">
+              {stats.statesVisited} of {stats.statesTotal} states so far — tap any state for the story.
+            </p>
+          </div>
           <div className="atlas-layout">
             <TravelMap
               metros={metroAreas}
@@ -429,7 +436,7 @@ function App() {
             />
           </div>
 
-          <StatsCards parkRankingsCount={parkRankings.length} regions={regions} stats={stats} />
+          <StatsCards regions={regions} stats={stats} />
         </main>
       )}
     </div>

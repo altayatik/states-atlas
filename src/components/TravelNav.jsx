@@ -1,25 +1,39 @@
-import { Home, MapPinned, Mountain, Trophy, Wrench } from 'lucide-react'
+import { Compass, PencilLine } from 'lucide-react'
 
 const navItems = [
-  ['states', '#/states', 'Map', MapPinned],
-  ['overview', '#/overview', 'Overview', Home],
-  ['parks', '#/parks', 'National Parks', Mountain],
-  ['achievements', '#/achievements', 'Achievements', Trophy],
+  ['overview', '#/overview', 'Overview'],
+  ['states', '#/states', 'Map'],
+  ['parks', '#/parks', 'Parks'],
+  ['achievements', '#/achievements', 'Milestones'],
 ]
 
 export function TravelNav({ activeSection }) {
   return (
-    <nav className="travel-nav glass-nav" aria-label="Travel atlas sections">
-      {navItems.map(([key, href, label, Icon]) => (
-        <a className={activeSection === key ? 'is-active' : ''} href={href} key={key}>
-          <Icon size={17} aria-hidden="true" />
-          <span>{label}</span>
-        </a>
-      ))}
-      <a className="travel-nav__edit" href="#/edit">
-        <Wrench size={17} aria-hidden="true" />
+    <header className="topbar">
+      <a className="topbar__brand" href="#/overview" aria-label="Travel Atlas home">
+        <span className="topbar__mark" aria-hidden="true">
+          <Compass size={16} />
+        </span>
+        <span className="topbar__name">Travel Atlas</span>
+      </a>
+
+      <nav className="topbar__nav" aria-label="Sections">
+        {navItems.map(([key, href, label]) => (
+          <a
+            aria-current={activeSection === key ? 'page' : undefined}
+            className={activeSection === key ? 'is-active' : ''}
+            href={href}
+            key={key}
+          >
+            {label}
+          </a>
+        ))}
+      </nav>
+
+      <a className="topbar__edit" href="#/edit">
+        <PencilLine size={15} aria-hidden="true" />
         <span>Edit</span>
       </a>
-    </nav>
+    </header>
   )
 }

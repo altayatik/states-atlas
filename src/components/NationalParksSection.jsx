@@ -11,7 +11,6 @@ import {
   getBestForLabel,
   getRankedRows,
   getScoreTone,
-  getTopCategories,
   scoreCategories,
 } from '../utils/parkScoring'
 
@@ -37,88 +36,74 @@ function ParkRankingCard({ isTied, rank, ranking }) {
   const total = calculateTotal(ranking.scores)
   const average = calculateAverage(ranking.scores)
   const bestFor = getBestForLabel(ranking.scores)
-  const { categories: topCategories, topScore } = getTopCategories(ranking.scores)
   const visitedLabel = formatVisitedDate(ranking.visitedDate)
-  const topCategoryLabel = topCategories.map((category) => category.label).join(' + ')
-  const rankTone = rank === 1 ? 'gold' : rank === 2 ? 'silver' : rank === 3 ? 'bronze' : 'green'
+  const rankTone = rank === 1 ? 'gold' : rank === 2 ? 'silver' : rank === 3 ? 'bronze' : 'plain'
   const displayName = ranking.isCustom ? ranking.parkName : getOfficialParkDisplayName(ranking.parkName)
 
   return (
-    <article className="park-ranking-card glass-card">
-      <div className="park-ranking-card__top">
-        <span className={`park-rank-badge park-rank-badge--${rankTone}`} aria-label={`Rank ${rank}`}>
-          #{rank}
-        </span>
-
-        <div className="park-ranking-card__title">
-          <p className="eyebrow">
-            <Mountain size={15} aria-hidden="true" />
-            {ranking.parkCode || 'Travel ranking'}
-          </p>
-          <h3>{displayName}</h3>
-          <div className="park-ranking-meta">
-            {ranking.state && (
-              <span>
-                <MapPin size={14} aria-hidden="true" />
-                {ranking.state}
-              </span>
-            )}
-            {visitedLabel && (
-              <span>
-                <CalendarDays size={14} aria-hidden="true" />
-                {visitedLabel}
-              </span>
-            )}
-          </div>
-        </div>
-
-        <div className="park-total-score" aria-label={`Total score ${total} out of 50`}>
-          <strong>{total}</strong>
-          <span>/50</span>
-        </div>
+    <article className="park-card">
+      <div className="park-card__rank" data-tone={rankTone} aria-label={`Rank ${rank}`}>
+        <span>{rank}</span>
       </div>
 
-      <div className="park-ranking-tags">
-        <span className="travel-tag travel-tag--best">
-          <Sparkles size={14} aria-hidden="true" />
-          {bestFor}
-        </span>
-        <span className="travel-tag">Average {average.toFixed(1)}/10</span>
-        <span className="travel-tag">Top: {topCategoryLabel} · {topScore}/10</span>
-        {isTied && <span className="travel-tag">Tied score</span>}
+      <div className="park-card__body">
+        <header className="park-card__header">
+          <div>
+            <h3>{displayName}</h3>
+            <p className="park-card__meta">
+              {ranking.state && (
+                <span>
+                  <MapPin size={13} aria-hidden="true" />
+                  {ranking.state}
+                </span>
+              )}
+              {visitedLabel && (
+                <span>
+                  <CalendarDays size={13} aria-hidden="true" />
+                  {visitedLabel}
+                </span>
+              )}
+              <span>
+                <Sparkles size={13} aria-hidden="true" />
+                {bestFor}
+              </span>
+              {isTied && <span>Tied score</span>}
+            </p>
+          </div>
+          <div className="park-card__total" aria-label={`Total score ${total} out of 50`}>
+            <strong>{total}</strong>
+            <span>/ 50 · avg {average.toFixed(1)}</span>
+          </div>
+        </header>
+
+        <dl className="park-card__scores">
+          {scoreCategories.map((category) => {
+            const score = ranking.scores[category.key]
+            const tone = getScoreTone(score)
+
+            return (
+              <div className="score-row" key={category.key}>
+                <dt>{category.label}</dt>
+                <dd>
+                  <span className="score-row__track" aria-hidden="true">
+                    <span style={{ width: `${score * 10}%`, background: tone.color }} />
+                  </span>
+                  <span className="score-row__value">{score}</span>
+                </dd>
+              </div>
+            )
+          })}
+        </dl>
+
         {ranking.honorableMention && (
-          <span className="travel-tag travel-tag--honorable">
+          <p className="park-card__honor">
             <Crown size={14} aria-hidden="true" />
             Honorable mention
-          </span>
+          </p>
         )}
+
+        {ranking.notes && <p className="park-card__notes">{ranking.notes}</p>}
       </div>
-
-      <dl className="park-score-grid">
-        {scoreCategories.map((category) => {
-          const score = ranking.scores[category.key]
-          const tone = getScoreTone(score)
-
-          return (
-            <div
-              className="park-score"
-              key={category.key}
-              style={{
-                '--score-bg': tone.background,
-                '--score-color': tone.color,
-                '--score-text': tone.text,
-                '--score-width': `${score * 10}%`,
-              }}
-            >
-              <dt>{category.label}</dt>
-              <dd>{score}</dd>
-              <span aria-hidden="true" />
-            </div>
-          )
-        })}
-      </dl>
-
-      {ranking.notes && <p className="park-notes">{ranking.notes}</p>}
     </article>
   )
 }
@@ -209,7 +194,7 @@ export function NationalParksSection({ activeScope = 'us', isLoading, loadError,
     : 'No parks ranked yet.'
 
   return (
-    <main className="public-page public-page--parks">
+    <main className="page page--parks">
       <section className="parks-section" aria-live="polite">
         <div className="section-header">
           <div>

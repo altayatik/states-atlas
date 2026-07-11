@@ -1,14 +1,14 @@
-import { CalendarDays, CheckCircle2, Compass, MapPinned, Mountain, Sparkles, Trophy } from 'lucide-react'
+import { ArrowRight, Crown, Heart, MapPinned, Sparkles, Trophy } from 'lucide-react'
 import { getOfficialParkDisplayName } from '../data/nationalParks'
-import { formatPercent, formatStatus } from '../utils/formatters'
+import { formatStatus } from '../utils/formatters'
 import { calculateTotal, getRankedRows } from '../utils/parkScoring'
-import { StatsCards } from './StatsCards'
+import { RegionalProgress } from './StatsCards'
 
 function formatUpdatedAt(value) {
-  if (!value) return 'Fresh entries appear here after edits'
+  if (!value) return ''
 
   const date = new Date(value)
-  if (Number.isNaN(date.getTime())) return 'Recently updated'
+  if (Number.isNaN(date.getTime())) return ''
 
   return new Intl.DateTimeFormat('en', {
     day: 'numeric',
@@ -28,100 +28,140 @@ function getFavoriteStates(states) {
 }
 
 export function OverviewSection({ achievements, parkRankings, regions, states, stats }) {
-  const progress = Math.round(stats.completionPercent)
+  const progress = Math.min(100, Math.max(0, Math.round(stats.completionPercent)))
   const latestState = getLatestState(states)
   const favoriteStates = getFavoriteStates(states)
   const unlockedCount = achievements.filter((achievement) => achievement.unlocked).length
   const topParkRow = getRankedRows(parkRankings)[0]
   const topPark = topParkRow?.ranking
 
+  const heroStats = [
+    [stats.statesVisited, `of ${stats.statesTotal} states`],
+    [stats.citiesLogged, 'cities logged'],
+    [stats.parksMarked, 'parks explored'],
+    [unlockedCount, 'milestones earned'],
+  ]
+
   return (
-    <main className="overview-page">
-      <section className="overview-hero" aria-labelledby="overview-title">
-        <div className="overview-hero__copy">
-          <p className="eyebrow">
-            <Compass size={17} aria-hidden="true" />
-            Combined Travel Atlas
+    <main className="page page--overview">
+      <section className="hero" aria-labelledby="hero-title">
+        <div className="hero__copy">
+          <p className="eyebrow">Altay &amp; Aidi</p>
+          <h1 id="hero-title">
+            Every trip, one map.
+          </h1>
+          <p className="hero__lede">
+            The states we&rsquo;ve crossed, the cities we&rsquo;ve wandered, and the parks
+            we keep arguing about ranking — kept in one living travel journal.
           </p>
-          <h2 id="overview-title">A personal map of where the good stories happened.</h2>
-          <p>
-            States, cities, national parks, favorite memories, and tiny victories live together here as one visual travel journal.
-          </p>
-          <div className="overview-hero__actions" aria-label="Primary sections">
+          <div className="hero__actions">
             <a className="button" href="#/states">
-              <MapPinned size={18} aria-hidden="true" />
-              Open map
+              Explore the map
+              <ArrowRight size={17} aria-hidden="true" />
             </a>
             <a className="button button--secondary" href="#/parks">
-              <Mountain size={18} aria-hidden="true" />
               Park rankings
             </a>
           </div>
         </div>
 
         <div
-          className="progress-orbit glass-panel"
-          style={{ '--progress': `${Math.min(100, Math.max(0, progress))}%` }}
-          aria-label={`Travel completion ${formatPercent(stats.completionPercent)}`}
+          className="hero__ring"
+          style={{ '--progress': `${progress}%` }}
+          role="img"
+          aria-label={`${progress} percent of the United States explored`}
         >
-          <span className="progress-orbit__ring" aria-hidden="true" />
-          <div className="progress-orbit__content">
-            <strong>{formatPercent(stats.completionPercent)}</strong>
-            <span>travel progress</span>
+          <span className="hero__ring-track" aria-hidden="true" />
+          <div className="hero__ring-center">
+            <strong>{progress}%</strong>
+            <span>explored</span>
           </div>
         </div>
+
+        <dl className="hero__stats">
+          {heroStats.map(([value, label]) => (
+            <div className="hero__stat" key={label}>
+              <dd>{value}</dd>
+              <dt>{label}</dt>
+            </div>
+          ))}
+        </dl>
       </section>
 
-      <StatsCards parkRankingsCount={parkRankings.length} regions={regions} stats={stats} />
-
-      <section className="overview-grid" aria-label="Travel atlas highlights">
-        <article className="glass-card insight-card insight-card--wide">
-          <div className="insight-card__icon">
-            <Sparkles size={19} aria-hidden="true" />
-          </div>
+      <section className="highlights" aria-label="Latest highlights">
+        <a className="highlight-card" href="#/states">
+          <span className="highlight-card__icon highlight-card__icon--sky" aria-hidden="true">
+            <MapPinned size={18} />
+          </span>
           <div>
-            <p className="eyebrow">Latest atlas note</p>
-            <h3>{latestState ? latestState.name : 'Ready for the next entry'}</h3>
+            <h2>{latestState ? latestState.name : 'The map is waiting'}</h2>
             <p>
               {latestState
-                ? `${formatStatus(latestState.status)} · ${formatUpdatedAt(latestState.updatedAt)}`
-                : 'Choose a state in the editor when the next trip memory is ready.'}
+                ? `Latest entry — ${formatStatus(latestState.status)}${formatUpdatedAt(latestState.updatedAt) ? `, ${formatUpdatedAt(latestState.updatedAt)}` : ''}`
+                : 'Open the map and start marking states.'}
             </p>
           </div>
-        </article>
+          <ArrowRight className="highlight-card__arrow" size={16} aria-hidden="true" />
+        </a>
 
-        <article className="glass-card insight-card">
-          <div className="insight-card__icon insight-card__icon--gold">
-            <Trophy size={19} aria-hidden="true" />
-          </div>
+        <a className="highlight-card" href="#/parks">
+          <span className="highlight-card__icon highlight-card__icon--gold" aria-hidden="true">
+            <Crown size={18} />
+          </span>
           <div>
-            <p className="eyebrow">Top park</p>
-            <h3>{topPark ? getOfficialParkDisplayName(topPark.parkName) : 'No ranked parks yet'}</h3>
-            <p>{topPark ? `${calculateTotal(topPark.scores)}/50 total score` : 'Rank a park and the champion appears here.'}</p>
+            <h2>{topPark ? getOfficialParkDisplayName(topPark.parkName) : 'No parks ranked yet'}</h2>
+            <p>
+              {topPark
+                ? `Reigning champion — ${calculateTotal(topPark.scores)}/50`
+                : 'Rank a park and the champion appears here.'}
+            </p>
           </div>
-        </article>
+          <ArrowRight className="highlight-card__arrow" size={16} aria-hidden="true" />
+        </a>
 
-        <article className="glass-card insight-card">
-          <div className="insight-card__icon insight-card__icon--green">
-            <CheckCircle2 size={19} aria-hidden="true" />
-          </div>
+        <a className="highlight-card" href="#/achievements">
+          <span className="highlight-card__icon highlight-card__icon--mint" aria-hidden="true">
+            <Trophy size={18} />
+          </span>
           <div>
-            <p className="eyebrow">Achievements</p>
-            <h3>{unlockedCount}/{achievements.length} unlocked</h3>
-            <p>Locked badges stay muted until the atlas earns them.</p>
+            <h2>{unlockedCount} of {achievements.length} milestones</h2>
+            <p>Badges unlock as the map fills in.</p>
           </div>
-        </article>
+          <ArrowRight className="highlight-card__arrow" size={16} aria-hidden="true" />
+        </a>
 
-        <article className="glass-card insight-card insight-card--wide">
-          <div className="insight-card__icon insight-card__icon--lavender">
-            <CalendarDays size={19} aria-hidden="true" />
-          </div>
+        <a className="highlight-card" href="#/states">
+          <span className="highlight-card__icon highlight-card__icon--terracotta" aria-hidden="true">
+            <Heart size={18} />
+          </span>
           <div>
-            <p className="eyebrow">Favorite states</p>
-            <h3>{favoriteStates.length ? favoriteStates.map((state) => state.name).join(', ') : 'Favorites are waiting'}</h3>
-            <p>Favorites get a warmer map color and a little extra glow across the atlas.</p>
+            <h2>
+              {favoriteStates.length
+                ? favoriteStates.map((state) => state.name).join(', ')
+                : 'Favorites are waiting'}
+            </h2>
+            <p>
+              {favoriteStates.length
+                ? 'The states that earned the favorite stamp.'
+                : 'Mark a state as a favorite and it lands here.'}
+            </p>
           </div>
-        </article>
+          <ArrowRight className="highlight-card__arrow" size={16} aria-hidden="true" />
+        </a>
+      </section>
+
+      <section className="overview-regions" aria-label="Progress by region">
+        <div className="section-header">
+          <div>
+            <p className="eyebrow">
+              <Sparkles size={15} aria-hidden="true" />
+              Region by region
+            </p>
+            <h2>How the country is filling in</h2>
+          </div>
+          <p>{stats.parksMarked} parks logged across {stats.statesVisited} states.</p>
+        </div>
+        <RegionalProgress regions={regions} />
       </section>
     </main>
   )
