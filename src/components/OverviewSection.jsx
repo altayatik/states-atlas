@@ -97,7 +97,7 @@ export function OverviewSection({ achievements, parkRankings, regions, states, s
           <div>
             <p className="eyebrow">Top park</p>
             <h3>{topPark ? getOfficialParkDisplayName(topPark.parkName) : 'No ranked parks yet'}</h3>
-            <p>{topPark ? `${calculateTotal(topPark.scores)}/50 total score` : 'Rankings will appear after Firestore loads.'}</p>
+            <p>{topPark ? `${calculateTotal(topPark.scores)}/50 total score` : 'Rank a park and the champion appears here.'}</p>
           </div>
         </article>
 

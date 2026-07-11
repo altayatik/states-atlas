@@ -219,7 +219,7 @@ export function NationalParksSection({ activeScope = 'us', isLoading, loadError,
             </p>
             <h2>Ranked park journal</h2>
           </div>
-          <p>Every card reads from Firestore and scores scenery, visitor centers, facilities, trails, and roads out of 50.</p>
+          <p>Every park is scored out of 50 across scenery, visitor centers, facilities, trails, and roads — a running ranking of the places we loved most.</p>
         </div>
 
         <nav className="parks-subnav glass-nav" aria-label="National parks views">

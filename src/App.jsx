@@ -429,19 +429,6 @@ function App() {
             />
           </div>
 
-          <section className="map-first-hero glass-panel" aria-labelledby="map-first-title">
-            <div>
-              <p className="eyebrow">Travel pulse</p>
-              <h2 id="map-first-title">The map leads. The stats follow.</h2>
-              <p>The atlas now opens on the interactive map, with the glassy progress layer tucked underneath it instead of replacing it.</p>
-            </div>
-            <div className="map-first-hero__chips" aria-label="Map highlights">
-              <span>{stats.statesVisited}/{stats.statesTotal} states visited</span>
-              <span>{stats.citiesLogged} cities logged</span>
-              <span>{stats.parksMarked} parks mapped</span>
-            </div>
-          </section>
-
           <StatsCards parkRankingsCount={parkRankings.length} regions={regions} stats={stats} />
         </main>
       )}
