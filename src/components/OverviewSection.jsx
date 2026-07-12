@@ -4,6 +4,8 @@ import { getOfficialParkDisplayName } from '../data/nationalParks'
 import { formatStatus } from '../utils/formatters'
 import { calculateTotal, getRankedRows } from '../utils/parkScoring'
 
+const COUNT_FRAME_MS = 1000 / 30
+
 function prefersReducedMotion() {
   return typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
 }
@@ -17,10 +19,17 @@ function useCountUp(value, duration = 950) {
     }
     let frame = 0
     const start = performance.now()
+    let lastValue = -1
+    let lastPaint = 0
     const tick = (now) => {
       const progress = Math.min(1, (now - start) / duration)
       const eased = 1 - Math.pow(1 - progress, 3)
-      setDisplay(Math.round(value * eased))
+      const nextValue = Math.round(value * eased)
+      if (nextValue !== lastValue && (now - lastPaint >= COUNT_FRAME_MS || progress === 1)) {
+        setDisplay(nextValue)
+        lastValue = nextValue
+        lastPaint = now
+      }
       if (progress < 1) frame = requestAnimationFrame(tick)
     }
     frame = requestAnimationFrame(tick)

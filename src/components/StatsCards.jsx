@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react'
 import { Flag, Heart, MapPin, Mountain, TentTree, Trophy } from 'lucide-react'
 import { formatPercent } from '../utils/formatters'
 
+const COUNT_FRAME_MS = 1000 / 30
+
 const statConfig = [
   ['statesVisited', 'States visited', Flag, 'sky'],
   ['statesStayed', 'Stayed overnight', TentTree, 'mint'],
@@ -27,11 +29,19 @@ function CountUp({ duration = 650, formatter = (value) => value, value }) {
     let frameId = 0
     const startTime = performance.now()
     const startValue = 0
+    let lastPaint = 0
+    let lastRenderedValue = Number.NaN
 
     const tick = (now) => {
       const progress = Math.min(1, (now - startTime) / duration)
       const eased = 1 - Math.pow(1 - progress, 3)
-      setDisplayValue(Math.round(startValue + (value - startValue) * eased))
+      const nextValue = Math.round(startValue + (value - startValue) * eased)
+
+      if (nextValue !== lastRenderedValue && (now - lastPaint >= COUNT_FRAME_MS || progress === 1)) {
+        setDisplayValue(nextValue)
+        lastRenderedValue = nextValue
+        lastPaint = now
+      }
 
       if (progress < 1) frameId = requestAnimationFrame(tick)
     }
