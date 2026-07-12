@@ -858,7 +858,7 @@ input[type='checkbox'] { width: 1.1em; height: 1.1em; margin: 0; accent-color: v
   border-radius: var(--r-xl); overflow: hidden;
   border: 1px solid var(--line); box-shadow: var(--sh-3), var(--sh-inset);
 }
-.maplibre-atlas { position: absolute; inset: 0; width: 100%; height: 100%; background: #dce8f1; }
+.maplibre-atlas { position: absolute; inset: 0; width: 100%; height: 100%; background: #f2e6d2; }
 
 .atlas-legend-bar {
   grid-column: 1 / -1; grid-row: 2;

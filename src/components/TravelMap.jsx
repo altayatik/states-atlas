@@ -33,7 +33,7 @@ const MAP_STYLE = {
       id: 'atlas-paper',
       type: 'background',
       paint: {
-        'background-color': '#e9f1f7',
+        'background-color': '#f4ead8',
       },
     },
   ],
@@ -397,7 +397,7 @@ export function TravelMap({
         source: 'states',
         paint: {
           'line-color': '#54677f',
-          'line-opacity': 0.55,
+          'line-opacity': 0.42,
           'line-width': ['interpolate', ['linear'], ['zoom'], 3, 0.8, 6, 1.4],
         },
       })
@@ -419,7 +419,7 @@ export function TravelMap({
         source: 'states',
         filter: ['==', ['get', 'selected'], true],
         paint: {
-          'line-color': '#1c2c44',
+          'line-color': '#6f4f35',
           'line-width': ['interpolate', ['linear'], ['zoom'], 3, 2.2, 6, 4.2],
         },
       })
