@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { AlertTriangle, CheckCircle2, Loader2, Save, Search, Trash2, X } from 'lucide-react'
+import { AlertTriangle, CheckCircle2, Loader2, Plus, Save, Search, Trash2, X } from 'lucide-react'
 import {
   CUSTOM_PARK_VALUE,
   getOfficialParkByName,
@@ -7,7 +7,8 @@ import {
   getOfficialParksByCountry,
   officialParks,
 } from '../data/nationalParks'
-import { calculateTotal, defaultParkScores, normalizeScores, scoreCategories } from '../utils/parkScoring'
+import { calculateTotal, defaultParkScores, displayScore, normalizeScores, scoreCategories } from '../utils/parkScoring'
+import { ParkPoster, ParkThumb } from './NationalParksSection'
 
 function cloneRanking(ranking) {
   if (!ranking) return null
@@ -18,18 +19,16 @@ function cloneRanking(ranking) {
   }
 }
 
-function createNewRanking() {
-  const firstPark = officialParks[0]
-
+function createRankingForPark(park, isCustom, customName) {
   return {
     honorableMention: false,
     id: '',
-    isCustom: false,
+    isCustom,
     notes: '',
-    parkCode: firstPark.parkCode,
-    parkName: firstPark.name,
+    parkCode: isCustom ? '' : (park?.parkCode || ''),
+    parkName: isCustom ? (customName || '').trim() : (park?.name || ''),
     scores: normalizeScores(defaultParkScores),
-    state: firstPark.state,
+    state: isCustom ? 'Custom' : (park?.state || ''),
     visitedDate: '',
   }
 }
@@ -71,6 +70,9 @@ export function NationalParksEditor({ isLoading, onDelete, onSave, rankings }) {
   const [saveStatus, setSaveStatus] = useState('idle')
   const [formError, setFormError] = useState('')
   const [rankingFilter, setRankingFilter] = useState('')
+  const [naming, setNaming] = useState(false)
+  const [newPark, setNewPark] = useState(officialParks[0]?.name ?? '')
+  const [newCustomName, setNewCustomName] = useState('')
 
   const selectedRanking = useMemo(
     () => rankings.find((ranking) => ranking.id === selectedId),
@@ -117,14 +119,19 @@ export function NationalParksEditor({ isLoading, onDelete, onSave, rankings }) {
     return () => window.removeEventListener('beforeunload', onBeforeUnload)
   }, [isDirty])
 
-  const startNewRanking = () => {
-    const nextDraft = createNewRanking()
+  const confirmNewPark = () => {
+    const isCustom = newPark === CUSTOM_PARK_VALUE
+    const name = isCustom ? newCustomName.trim() : newPark
+    if (isCustom && !name) return
+    const park = isCustom ? null : getOfficialParkByName(newPark)
+    const nextDraft = createRankingForPark(park, isCustom, name)
     setSelectedId('new')
     setDraft(nextDraft)
-    setCustomParkName('')
+    setCustomParkName(isCustom ? name : '')
     setSavedSnapshot(serializeDraft(nextDraft))
     setSaveStatus('idle')
     setFormError('')
+    setNaming(false)
   }
 
   const saveDraftIfNeeded = async () => {
@@ -161,29 +168,26 @@ export function NationalParksEditor({ isLoading, onDelete, onSave, rankings }) {
     }
   }
 
-  const handleRankingChange = async (event) => {
-    const nextId = event.target.value
-    if (nextId === selectedId) return
-
+  const handlePickRanking = async (id) => {
+    if (id === selectedId) return
     const canSwitch = await saveDraftIfNeeded()
     if (!canSwitch) return
-
     setFormError('')
+    setNaming(false)
+    setSelectedId(id)
+  }
 
-    if (!nextId) {
-      setSelectedId('')
-      setDraft(null)
-      setSavedSnapshot('')
-      setSaveStatus('idle')
-      return
-    }
-
-    if (nextId === 'new') {
-      startNewRanking()
-      return
-    }
-
-    setSelectedId(nextId)
+  const handleNewRanking = async () => {
+    const canSwitch = await saveDraftIfNeeded()
+    if (!canSwitch) return
+    setFormError('')
+    setSelectedId('')
+    setDraft(null)
+    setSavedSnapshot('')
+    setSaveStatus('idle')
+    setNewPark(officialParks[0]?.name ?? '')
+    setNewCustomName('')
+    setNaming(true)
   }
 
   const updateField = (field, value) => {
@@ -283,32 +287,86 @@ export function NationalParksEditor({ isLoading, onDelete, onSave, rankings }) {
 
   return (
     <>
-      <section className="editor-tools editor-tools--picker glass-panel" aria-label="National park picker">
-        <label className="search-field">
-          <span>Search rankings</span>
-          <Search size={17} aria-hidden="true" />
-          <input
-            placeholder="Type a park, code, or state"
-            value={rankingFilter}
-            onChange={(event) => setRankingFilter(event.target.value)}
-          />
-        </label>
-        <label>
-          Choose a park ranking to edit
-          <select value={selectedId} onChange={handleRankingChange}>
-            <option value="">Choose a ranking</option>
-            <option value="new">Add a new park ranking</option>
-            {filteredRankings.map((ranking) => (
-              <option key={ranking.id} value={ranking.id}>
-                {ranking.isCustom ? ranking.parkName : getOfficialParkDisplayName(ranking.parkName)} {ranking.parkCode ? `(${ranking.parkCode})` : ''}
-              </option>
-            ))}
-          </select>
-        </label>
+      <section className="editor-picker glass-panel" aria-label="National park picker">
+        <div className="editor-picker__top">
+          <label className="search-field">
+            <span>Find a park ranking</span>
+            <Search size={17} aria-hidden="true" />
+            <input
+              placeholder="Type a park, code, or state"
+              value={rankingFilter}
+              onChange={(event) => setRankingFilter(event.target.value)}
+            />
+          </label>
+          <button className="button" type="button" onClick={handleNewRanking}>
+            <Plus size={17} aria-hidden="true" /> New ranking
+          </button>
+        </div>
+        <div className="park-thumb-grid" role="listbox" aria-label="Park rankings">
+          {filteredRankings.map((ranking) => (
+            <ParkThumb
+              isActive={ranking.id === selectedId}
+              key={ranking.id}
+              onSelect={() => handlePickRanking(ranking.id)}
+              ranking={ranking}
+            />
+          ))}
+        </div>
       </section>
 
       <section className="editor-select-panel" aria-label="Selected national park editor">
-        {!draft ? (
+        {naming ? (
+          <article className="editor-form-panel park-namer glass-panel">
+            <p className="eyebrow">New ranking</p>
+            <h2>Which park?</h2>
+            <p className="park-namer__hint">Pick a national park or name a custom spot — then you&rsquo;ll score it.</p>
+            <div className="form-grid">
+              <label>
+                Park
+                <select value={newPark} onChange={(event) => setNewPark(event.target.value)}>
+                  <optgroup label="U.S. National Parks">
+                    {usParkOptions.map((park) => (
+                      <option key={park.parkCode} value={park.name}>
+                        {getOfficialParkDisplayName(park.name)} ({park.state})
+                      </option>
+                    ))}
+                  </optgroup>
+                  <optgroup label="Canada National Parks">
+                    {canadaParkOptions.map((park) => (
+                      <option key={park.parkCode} value={park.name}>
+                        {getOfficialParkDisplayName(park.name)}
+                      </option>
+                    ))}
+                  </optgroup>
+                  <option value={CUSTOM_PARK_VALUE}>Custom park</option>
+                </select>
+              </label>
+              {newPark === CUSTOM_PARK_VALUE && (
+                <label>
+                  Custom park name
+                  <input
+                    placeholder="Name your park"
+                    value={newCustomName}
+                    onChange={(event) => setNewCustomName(event.target.value)}
+                  />
+                </label>
+              )}
+            </div>
+            <div className="park-namer__actions">
+              <button
+                className="button"
+                disabled={newPark === CUSTOM_PARK_VALUE && !newCustomName.trim()}
+                type="button"
+                onClick={confirmNewPark}
+              >
+                Start scoring
+              </button>
+              <button className="button button--ghost" type="button" onClick={() => setNaming(false)}>
+                Cancel
+              </button>
+            </div>
+          </article>
+        ) : !draft ? (
           <div className="editor-empty-state glass-panel">
             <h2>{isLoading ? 'Loading park rankings...' : 'Choose a park ranking to start editing.'}</h2>
             <p>Park scores, notes, visited dates, and honorable mentions save to Firestore.</p>
@@ -319,7 +377,7 @@ export function NationalParksEditor({ isLoading, onDelete, onSave, rankings }) {
               <div>
                 <p className="eyebrow">{draft.parkCode || (draft.isCustom ? 'Custom park' : 'National Park')}</p>
                 <h2>{draftDisplayName || 'New park ranking'}</h2>
-                <p>{draft.state} · {calculateTotal(draft.scores)}/50 total score</p>
+                <p>{draft.state} · {calculateTotal(draft.scores)}/100 total score</p>
               </div>
               <div className="editor-form-panel__actions">
                 {statusText && (
@@ -348,6 +406,7 @@ export function NationalParksEditor({ isLoading, onDelete, onSave, rankings }) {
               </div>
             </div>
 
+            <div className="park-editor-layout">
             <form className="edit-form" onSubmit={(event) => event.preventDefault()}>
               <div className="form-grid">
                 <label>
@@ -394,8 +453,11 @@ export function NationalParksEditor({ isLoading, onDelete, onSave, rankings }) {
                 <legend>Scores</legend>
                 <div className="park-score-editor-grid">
                   {scoreCategories.map((category) => (
-                    <label key={category.key}>
-                      {category.label}
+                    <label className="score-slider" key={category.key}>
+                      <span className="score-slider__head">
+                        <span>{category.label}</span>
+                        <strong>{displayScore(draft.scores[category.key])}<em>/20</em></strong>
+                      </span>
                       <input
                         max="10"
                         min="1"
@@ -403,7 +465,6 @@ export function NationalParksEditor({ isLoading, onDelete, onSave, rankings }) {
                         value={draft.scores[category.key]}
                         onChange={(event) => updateScore(category.key, event.target.value)}
                       />
-                      <span className="range-value">{draft.scores[category.key]}/10</span>
                     </label>
                   ))}
                 </div>
@@ -429,6 +490,12 @@ export function NationalParksEditor({ isLoading, onDelete, onSave, rankings }) {
 
               {formError && <p className="form-error" role="alert">{formError}</p>}
             </form>
+
+            <aside className="park-editor-preview" aria-label="Live poster preview">
+              <ParkPoster preview rank={0} ranking={draft} />
+              <p className="park-editor-preview__hint">This is the poster that lands on the wall — it updates as you score.</p>
+            </aside>
+            </div>
           </article>
         )}
       </section>

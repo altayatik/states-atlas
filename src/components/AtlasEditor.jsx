@@ -1,9 +1,82 @@
 import { useEffect, useMemo, useState } from 'react'
 import { AlertTriangle, CheckCircle2, Loader2, Save, Search, X } from 'lucide-react'
-import { BADGE_LABELS, STATUSES, STATUS_LABELS } from '../data/states'
+import { BADGE_LABELS, STATUS_COLORS, STATUSES, STATUS_LABELS } from '../data/states'
 import { getCityOptionsForState, getParkOptionsForState } from '../data/stateTravelOptions'
 import { formatStatus } from '../utils/formatters'
 import { isPlaceOptionSelected } from '../utils/places'
+import { StateDetailPanel } from './StateDetailPanel'
+
+// Geographic tile-grid layout (column, row) — a light-theme take on the
+// RentyCar region atlas. Lets you pick a state by clicking its place on the map.
+const US_TILES = {
+  WA: [1, 1], MT: [3, 1], ND: [4, 1], MN: [5, 1], MI: [7, 1], VT: [11, 1], ME: [12, 1],
+  OR: [1, 2], ID: [2, 2], WY: [3, 2], SD: [4, 2], WI: [6, 2], NY: [10, 2], NH: [12, 2], MA: [13, 2],
+  NV: [2, 3], NE: [4, 3], IA: [5, 3], IL: [6, 3], IN: [7, 3], OH: [8, 3], PA: [9, 3], NJ: [11, 3], CT: [12, 3], RI: [13, 3],
+  CA: [1, 4], UT: [2, 4], CO: [3, 4], KS: [4, 4], MO: [5, 4], KY: [6, 4], WV: [7, 4], VA: [8, 4], MD: [9, 4], DE: [10, 4],
+  AZ: [2, 5], NM: [3, 5], OK: [4, 5], AR: [5, 5], TN: [6, 5], NC: [7, 5], DC: [10, 5],
+  TX: [4, 6], LA: [5, 6], MS: [6, 6], AL: [7, 6], SC: [8, 6],
+  GA: [8, 7],
+  FL: [9, 8],
+}
+const CANADA_TILES = {
+  YT: [1, 1], NT: [2, 1], NU: [3, 1], NL: [12, 1],
+  BC: [1, 2], AB: [3, 2], SK: [4, 2], MB: [5, 2], ON: [8, 2], QC: [10, 2],
+  NB: [11, 3], NS: [12, 3], PE: [13, 3],
+}
+const INSET_TILES = { AK: [1, 1], HI: [3, 1] }
+
+function StateTileMap({ states, selectedCode, filter, onPick }) {
+  const byCode = new Map(states.map((state) => [state.code, state]))
+  const normalized = filter.trim().toLowerCase()
+
+  const isMuted = (state) => {
+    if (!normalized || !state) return false
+    return !(
+      state.code.toLowerCase().includes(normalized)
+      || state.name.toLowerCase().includes(normalized)
+      || formatStatus(state.status).toLowerCase().includes(normalized)
+    )
+  }
+
+  const renderGroup = (tiles, modifier) => (
+    <div className={`tilemap__grid tilemap__grid--${modifier}`}>
+      {Object.entries(tiles).map(([code, [col, row]]) => {
+        const state = byCode.get(code)
+        return (
+          <button
+            aria-label={state ? state.name : code}
+            className={`tile${code === selectedCode ? ' is-active' : ''}${isMuted(state) ? ' is-muted' : ''}`}
+            disabled={!state}
+            key={code}
+            style={{ gridColumn: col, gridRow: row, background: state ? STATUS_COLORS[state.status] : 'transparent' }}
+            title={state ? `${state.name} — ${formatStatus(state.status)}` : code}
+            type="button"
+            onClick={() => state && onPick(code)}
+          >
+            {code}
+          </button>
+        )
+      })}
+    </div>
+  )
+
+  return (
+    <div className="tilemap">
+      <div>
+        <p className="tilemap__group-label">Canada</p>
+        {renderGroup(CANADA_TILES, 'wide')}
+      </div>
+      <div>
+        <p className="tilemap__group-label">United States</p>
+        {renderGroup(US_TILES, 'wide')}
+      </div>
+      <div>
+        <p className="tilemap__group-label">Insets</p>
+        {renderGroup(INSET_TILES, 'wide')}
+      </div>
+    </div>
+  )
+}
 
 function cloneState(state) {
   if (!state) return null
@@ -75,18 +148,6 @@ export function AtlasEditor({ hideHeader = false, states, onBack, onSave }) {
   const selectedState = states.find((state) => state.code === selectedCode)
   const isDirty = Boolean(draft && serializeDraft(draft) !== savedSnapshot)
   const isSaving = saveStatus === 'saving'
-  const filteredStates = useMemo(() => {
-    const normalizedFilter = stateFilter.trim().toLowerCase()
-    if (!normalizedFilter) return states
-
-    return states.filter((state) => (
-      state.code === selectedCode
-      || state.name.toLowerCase().includes(normalizedFilter)
-      || state.code.toLowerCase().includes(normalizedFilter)
-      || formatStatus(state.status).toLowerCase().includes(normalizedFilter)
-    ))
-  }, [selectedCode, stateFilter, states])
-
   const stateCityOptions = useMemo(
     () => getCityOptionsForState(draft?.code),
     [draft?.code],
@@ -151,22 +212,11 @@ export function AtlasEditor({ hideHeader = false, states, onBack, onSave }) {
     }
   }
 
-  const handleStateChange = async (event) => {
-    const nextCode = event.target.value
-    if (nextCode === selectedCode) return
-
+  const handlePick = async (code) => {
+    if (code === selectedCode) return
     const canSwitch = await saveDraftIfNeeded()
     if (!canSwitch) return
-
-    if (!nextCode) {
-      setSelectedCode('')
-      setDraft(null)
-      setSavedSnapshot('')
-      setSaveStatus('idle')
-      return
-    }
-
-    startEditing(nextCode)
+    startEditing(code)
   }
 
   const handleClose = async () => {
@@ -259,9 +309,9 @@ export function AtlasEditor({ hideHeader = false, states, onBack, onSave }) {
         </header>
       )}
 
-      <section className="editor-tools editor-tools--picker glass-panel" aria-label="State picker">
+      <section className="editor-picker glass-panel" aria-label="State picker">
         <label className="search-field">
-          <span>Search states</span>
+          <span>Find a state or territory</span>
           <Search size={17} aria-hidden="true" />
           <input
             placeholder="Type a state, code, or status"
@@ -269,17 +319,12 @@ export function AtlasEditor({ hideHeader = false, states, onBack, onSave }) {
             onChange={(event) => setStateFilter(event.target.value)}
           />
         </label>
-        <label>
-          Choose a state or territory to edit
-          <select value={selectedCode} onChange={handleStateChange}>
-            <option value="">Choose a state or territory</option>
-            {filteredStates.map((state) => (
-              <option key={state.code} value={state.code}>
-                {state.name} — {formatStatus(state.status)}
-              </option>
-            ))}
-          </select>
-        </label>
+        <StateTileMap
+          states={states}
+          selectedCode={selectedCode}
+          filter={stateFilter}
+          onPick={handlePick}
+        />
       </section>
 
       <section className="editor-select-panel" aria-label="Selected state editor">
@@ -318,6 +363,7 @@ export function AtlasEditor({ hideHeader = false, states, onBack, onSave }) {
               </div>
             </div>
 
+            <div className="state-editor-layout">
             <form className="edit-form" onSubmit={(event) => event.preventDefault()}>
               <div className="form-grid">
                 <label>
@@ -497,6 +543,12 @@ export function AtlasEditor({ hideHeader = false, states, onBack, onSave }) {
 
               {formError && <p className="form-error" role="alert">{formError}</p>}
             </form>
+
+            <aside className="state-editor-preview" aria-label="Live preview">
+              <p className="editor-preview-label">Live preview · public card</p>
+              <StateDetailPanel state={draft} states={states} />
+            </aside>
+            </div>
           </article>
         )}
       </section>

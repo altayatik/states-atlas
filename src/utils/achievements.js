@@ -1,8 +1,11 @@
 import { achievements } from '../data/achievements'
 import { CANADA_SUBDIVISION_CODES, CANADA_SUBDIVISIONS } from '../data/canada'
+import { REGIONS } from '../data/states'
 import { getCanadianProvinceCodesForPlaces } from './canada'
 import { isPlaceOptionSelected } from './places'
 import { isVisited } from './stats'
+
+const STAYED_STATUSES = new Set(['stayed_overnight', 'lived_there', 'favorite'])
 
 const contiguousStates = [
   'AL',
@@ -127,6 +130,22 @@ export function evaluateAchievements(states) {
     if (achievement.type === 'canada_cities') {
       progress = canadaCityCount
       unlocked = canadaCityCount >= achievement.threshold
+    }
+
+    if (achievement.type === 'region') {
+      const codes = REGIONS[achievement.region] ?? []
+      progress = codes.filter((code) => isVisited(stateByCode.get(code))).length
+      unlocked = progress >= achievement.threshold
+    }
+
+    if (achievement.type === 'stayed') {
+      progress = usStates.filter((state) => STAYED_STATUSES.has(state.status)).length
+      unlocked = progress >= achievement.threshold
+    }
+
+    if (achievement.type === 'lived') {
+      progress = usStates.filter((state) => state.status === 'lived_there').length
+      unlocked = progress >= achievement.threshold
     }
 
     if (achievement.type === 'contiguous') {

@@ -31,8 +31,21 @@ export function normalizeScores(scores) {
   }), {})
 }
 
+// Scores are entered on a 1–10 scale per category, but the atlas presents them
+// doubled: each category reads out of 20 and the total out of 100. Keeping the
+// stored scale at 1–10 means every existing ranking converts proportionally
+// (e.g. 37/50 → 74/100) with no data migration.
+export const SCORE_DISPLAY_SCALE = 2
+export const MAX_CATEGORY = 10 * SCORE_DISPLAY_SCALE
+export const MAX_TOTAL = 50 * SCORE_DISPLAY_SCALE
+
+export function displayScore(value) {
+  return normalizeScore(value) * SCORE_DISPLAY_SCALE
+}
+
 export function calculateTotal(scores) {
-  return scoreCategories.reduce((total, category) => total + normalizeScore(scores?.[category.key]), 0)
+  const raw = scoreCategories.reduce((total, category) => total + normalizeScore(scores?.[category.key]), 0)
+  return raw * SCORE_DISPLAY_SCALE
 }
 
 export function calculateAverage(scores) {

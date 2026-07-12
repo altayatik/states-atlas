@@ -10,18 +10,18 @@ import { StatusLegend } from './StatusLegend'
 import { isMetroVisited, isParkVisited } from '../utils/places'
 
 const DEFAULT_BOUNDS = [
-  [-146, 22],
-  [-52, 59],
+  [-170, 17],
+  [-52, 72],
 ]
 
 const SELECTED_VIEW_BOUNDS = {
   AK: [
-    [-146, 29],
-    [-130, 40],
+    [-172, 51],
+    [-129, 72],
   ],
   HI: [
-    [-130, 22],
-    [-118, 30],
+    [-119, 20],
+    [-105, 30],
   ],
 }
 
@@ -67,20 +67,9 @@ const stateFillOpacity = [
 ]
 
 const HAWAII_SOURCE_CENTER = [-157.35, 20.75]
-const HAWAII_DISPLAY_CENTER = [-124.15, 25.55]
-const HAWAII_DISPLAY_SCALE = 2.1
-const ALASKA_SOURCE_CENTER = [-152.4, 63.6]
-const ALASKA_DISPLAY_CENTER = [-138.3, 34.7]
-const ALASKA_DISPLAY_SCALE = 0.34
+const HAWAII_DISPLAY_CENTER = [-124, 29.5]
+const HAWAII_DISPLAY_SCALE = 1.9
 const canadianSubdivisionCodes = new Set(CANADA_SUBDIVISION_CODES)
-
-function transformAlaskaCoordinate(coordinate) {
-  const [lng, lat] = coordinate
-  return [
-    ALASKA_DISPLAY_CENTER[0] + (lng - ALASKA_SOURCE_CENTER[0]) * ALASKA_DISPLAY_SCALE,
-    ALASKA_DISPLAY_CENTER[1] + (lat - ALASKA_SOURCE_CENTER[1]) * ALASKA_DISPLAY_SCALE,
-  ]
-}
 
 function transformHawaiiCoordinate(coordinate) {
   const [lng, lat] = coordinate
@@ -102,15 +91,9 @@ function transformHawaiiGeometry(geometry) {
   }
 }
 
-function transformAlaskaGeometry(geometry) {
-  return {
-    ...geometry,
-    coordinates: transformGeometryCoordinates(geometry.coordinates, transformAlaskaCoordinate),
-  }
-}
-
+// Alaska renders from its true geometry in its real location (next to the
+// Yukon). Only Hawaii is drawn as a small inset, since it has no land neighbor.
 function transformInsetCoordinate(coordinate, stateCodes = []) {
-  if (stateCodes.includes('AK')) return transformAlaskaCoordinate(coordinate)
   if (stateCodes.includes('HI')) return transformHawaiiCoordinate(coordinate)
   return coordinate
 }
@@ -166,6 +149,17 @@ function getGeometryBounds(geometry) {
   ])
 }
 
+// Parse the US topology and pre-transform the Alaska/Hawaii insets ONCE at
+// module load — this is pure and static, so it never needs to run per render.
+const US_BASE_FEATURES = feature(usAtlas, usAtlas.objects.states).features
+  .map((item) => {
+    const code = fipsToStateCode[item.id]
+    if (!code) return null
+    const geometry = code === 'HI' ? transformHawaiiGeometry(item.geometry) : item.geometry
+    return { code, geometry }
+  })
+  .filter(Boolean)
+
 function buildPlaceFeature(item, type, states, selectedPlaceType, selectedPlaceId, selectedStateCode) {
   const selected = selectedPlaceType === type && selectedPlaceId === item.id
   const visited = type === 'metro'
@@ -173,19 +167,19 @@ function buildPlaceFeature(item, type, states, selectedPlaceType, selectedPlaceI
     : isParkVisited(item, states)
   const stateSelected = item.stateCodes?.includes(selectedStateCode)
   const isCanadianPlace = item.country === 'canada' || item.stateCodes?.some((code) => canadianSubdivisionCodes.has(code))
-  const canShowForSelectedState = stateSelected && !isCanadianPlace
   const sourceCenter = getGeometryCenter(item.geometry)
   const center = sourceCenter
     ? transformInsetCoordinate(sourceCenter, item.stateCodes)
     : sourceCenter
-  if (!selected && !visited && !canShowForSelectedState) return null
+  // Only ever pin places we've actually been to (plus whatever is actively selected).
+  if (!selected && !visited) return null
   if (!center) return null
 
   return {
     center,
     item,
     selected,
-    stateSelected: canShowForSelectedState,
+    stateSelected: Boolean(stateSelected) && !isCanadianPlace,
     type,
     visited,
   }
@@ -197,17 +191,17 @@ function prefersReducedMotion() {
 
 function getMapPadding(element, mode = 'default') {
   const width = element?.clientWidth ?? window.innerWidth
-  const isMobile = width < 680
+  const isMobile = width < 940
 
   if (mode === 'selected') {
     return isMobile
-      ? { bottom: 34, left: 26, right: 26, top: 34 }
-      : { bottom: 58, left: 70, right: 70, top: 58 }
+      ? { bottom: 32, left: 26, right: 26, top: 32 }
+      : { bottom: 54, left: 60, right: 60, top: 54 }
   }
 
   return isMobile
-    ? { bottom: 24, left: 16, right: 16, top: 24 }
-    : { bottom: 42, left: 52, right: 52, top: 42 }
+    ? { bottom: 22, left: 18, right: 18, top: 22 }
+    : { bottom: 44, left: 56, right: 56, top: 44 }
 }
 
 function fitDefaultBounds(map, element) {
@@ -265,9 +259,11 @@ export function TravelMap({
   const mapRef = useRef(null)
   const placeMarkersRef = useRef([])
   const latestMapDataRef = useRef({})
+  const hoveredIdRef = useRef('')
   const [isMapReady, setIsMapReady] = useState(false)
-  const [hoveredStateCode, setHoveredStateCode] = useState('')
-  const [mapZoom, setMapZoom] = useState(0)
+  // Bucketed zoom (0 = framed, 1 = pins, 2 = pins + labels) so markers only
+  // rebuild when crossing a threshold, not on every zoom frame.
+  const [zoomBucket, setZoomBucket] = useState(0)
 
   const stateByCode = useMemo(() => new Map(states.map((state) => [state.code, state])), [states])
   const selectedPlaceId = selectedPlace?.item?.id ?? ''
@@ -288,23 +284,20 @@ export function TravelMap({
           name: province.name,
           status: province.status,
           selected: selectedStateCode === provinceCode,
-          hovered: hoveredStateCode === provinceCode,
           hasSelection: Boolean(selectedStateCode),
         },
         geometry: item.geometry,
       }
     }).filter(Boolean)
-  }, [hoveredStateCode, selectedStateCode, stateByCode])
+  }, [selectedStateCode, stateByCode])
 
   const statesGeoJson = useMemo(() => ({
     type: 'FeatureCollection',
     features: [
       ...canadaFeatures,
-      ...feature(usAtlas, usAtlas.objects.states).features
-      .map((item) => {
-        const code = fipsToStateCode[item.id]
+      ...US_BASE_FEATURES.map(({ code, geometry }) => {
         const state = stateByCode.get(code)
-        if (!code || !state) return null
+        if (!state) return null
 
         return {
           type: 'Feature',
@@ -314,19 +307,13 @@ export function TravelMap({
             name: state.name,
             status: state.status,
             selected: selectedStateCode === code,
-            hovered: hoveredStateCode === code,
             hasSelection: Boolean(selectedStateCode),
           },
-          geometry: code === 'AK'
-            ? transformAlaskaGeometry(item.geometry)
-            : code === 'HI'
-              ? transformHawaiiGeometry(item.geometry)
-              : item.geometry,
+          geometry,
         }
-      })
-      .filter(Boolean),
-    ].filter(Boolean),
-  }), [canadaFeatures, hoveredStateCode, selectedStateCode, stateByCode])
+      }).filter(Boolean),
+    ],
+  }), [canadaFeatures, selectedStateCode, stateByCode])
 
   const placeFeatures = useMemo(() => [
     ...metros
@@ -379,7 +366,7 @@ export function TravelMap({
       showCompass: false,
       showZoom: true,
       visualizePitch: false,
-    }), 'top-right')
+    }), 'top-left')
 
     const syncViewport = () => syncViewportDataset(map, mapContainerRef.current)
     const resizeMap = () => {
@@ -419,9 +406,9 @@ export function TravelMap({
         id: 'hovered-state-line',
         type: 'line',
         source: 'states',
-        filter: ['==', ['get', 'hovered'], true],
         paint: {
           'line-color': '#c46a45',
+          'line-opacity': ['case', ['boolean', ['feature-state', 'hover'], false], 1, 0],
           'line-width': ['interpolate', ['linear'], ['zoom'], 3, 1.8, 6, 3.2],
         },
       })
@@ -443,9 +430,18 @@ export function TravelMap({
         if (code) latestMapDataRef.current.onSelectState(code)
       })
 
+      const setHover = (code) => {
+        if (hoveredIdRef.current === code) return
+        if (hoveredIdRef.current) {
+          map.setFeatureState({ source: 'states', id: hoveredIdRef.current }, { hover: false })
+        }
+        hoveredIdRef.current = code
+        if (code) map.setFeatureState({ source: 'states', id: code }, { hover: true })
+      }
+
       map.on('mousemove', 'states-fill', (event) => {
         const code = event.features?.[0]?.properties?.code
-        if (code) setHoveredStateCode(code)
+        if (code) setHover(code)
       })
 
       map.on('mouseenter', 'states-fill', () => {
@@ -453,18 +449,21 @@ export function TravelMap({
       })
 
       map.on('mouseleave', 'states-fill', () => {
-        setHoveredStateCode('')
+        setHover('')
         map.getCanvas().style.cursor = ''
       })
 
       fitDefaultBounds(map, mapContainerRef.current)
-      setMapZoom(map.getZoom())
       syncViewport()
       setIsMapReady(true)
     })
 
+    const computeZoomBucket = (z) => (z >= 4.85 ? 2 : z >= 4.15 ? 1 : 0)
     map.on('zoom', () => {
-      setMapZoom(map.getZoom())
+      setZoomBucket((current) => {
+        const next = computeZoomBucket(map.getZoom())
+        return next === current ? current : next
+      })
       syncViewport()
     })
 
@@ -512,10 +511,10 @@ export function TravelMap({
     placeMarkersRef.current = []
 
     placeFeatures.forEach((place) => {
-      const showPin = place.selected || place.stateSelected || mapZoom >= 4.15
+      const showPin = place.selected || place.stateSelected || zoomBucket >= 1
       if (!showPin) return
 
-      const showLabel = place.selected || place.stateSelected || mapZoom >= 4.85
+      const showLabel = place.selected || place.stateSelected || zoomBucket >= 2
       const button = document.createElement('button')
       button.type = 'button'
       button.className = [
@@ -541,9 +540,8 @@ export function TravelMap({
       }).setLngLat(place.center).addTo(map)
       placeMarkersRef.current.push(marker)
     })
-  }, [isMapReady, mapZoom, onSelectMetro, onSelectPark, placeFeatures])
+  }, [isMapReady, zoomBucket, onSelectMetro, onSelectPark, placeFeatures])
 
-  const selectedStateName = stateByCode.get(selectedStateCode)?.name
   const handleResetMap = () => {
     const map = mapRef.current
     if (map) fitDefaultBounds(map, mapContainerRef.current)
@@ -551,24 +549,8 @@ export function TravelMap({
   }
 
   return (
-    <section className="map-card map-card--central glass-panel" aria-labelledby="map-title">
-      <div className="section-header map-heading">
-        <div>
-          <p className="eyebrow">State atlas</p>
-          <h2 id="map-title">Explore the map</h2>
-        </div>
-        <button className="button button--secondary button--small" type="button" onClick={handleResetMap}>
-          Reset map
-        </button>
-      </div>
-
-      <p className="map-hint">Pinch or scroll to explore. Zoom in to reveal cities and parks.</p>
-
-      <div className="map-shell map-shell--maplibre">
-        <div className="map-overlay-panel glass-panel" aria-live="polite">
-          <strong>{selectedStateName || 'North America framed'}</strong>
-          <span>{selectedStateName ? 'Selected state fitted' : 'Pins appear as you zoom or select a state'}</span>
-        </div>
+    <>
+      <div className="atlas-map">
         <div
           ref={mapContainerRef}
           className="maplibre-atlas"
@@ -576,9 +558,15 @@ export function TravelMap({
           data-canada-feature-codes={canadaFeatures.map((item) => item.properties.code).join(' ')}
           aria-label="Gesture-driven United States travel map"
         />
+
+        <button className="atlas-map__reset" type="button" onClick={handleResetMap}>
+          Reset map
+        </button>
       </div>
 
-      <StatusLegend />
-    </section>
+      <div className="atlas-legend-bar">
+        <StatusLegend />
+      </div>
+    </>
   )
 }

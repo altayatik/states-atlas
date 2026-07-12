@@ -19,8 +19,8 @@ export const STATUS_LABELS = {
 }
 
 export const STATUS_COLORS = {
-  not_visited: '#f1eee7',
-  passed_through: '#ffd8a8',
+  not_visited: '#e6edf3',
+  passed_through: '#f3c7a4',
   visited: '#a9d6ff',
   stayed_overnight: '#a8e6c3',
   lived_there: '#c7b7ff',

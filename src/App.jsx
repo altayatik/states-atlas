@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
 import { OverviewSection } from './components/OverviewSection'
-import { StatsCards } from './components/StatsCards'
 import { TravelMap } from './components/TravelMap'
 import { StateDetailPanel } from './components/StateDetailPanel'
 import { Achievements } from './components/Achievements'
@@ -404,39 +403,36 @@ function App() {
           rankings={parkRankings}
         />
       ) : activeSection === 'achievements' ? (
-        <main className="page page--achievements">
-          <Achievements achievements={achievements} />
-        </main>
+        <Achievements achievements={achievements} />
       ) : (
-        <main className="page page--states">
-          <div className="page-heading">
-            <div>
+        <main className="states-stage">
+          <TravelMap
+            metros={metroAreas}
+            onSelectState={selectState}
+            onSelectMetro={selectMetro}
+            onSelectPark={selectPark}
+            parks={parkBoundaries}
+            selectedPlace={selectedPlace}
+            selectedStateCode={selectedStateCode}
+            states={atlasStates}
+          />
+          <aside className="states-dock">
+            <div className="states-dock__hud glass-panel">
               <p className="eyebrow">States &amp; provinces</p>
-              <h1>Where we&rsquo;ve been</h1>
+              <h2 className="states-dock__title">Where we&rsquo;ve been</h2>
+              <div className="hud-rail">
+                <span><strong>{stats.statesVisited}</strong>/{stats.statesTotal} states</span>
+                <span><strong>{stats.citiesLogged}</strong> cities</span>
+                <span><strong>{stats.parksMarked}</strong> parks</span>
+                <span><strong>{Math.round(stats.completionPercent)}%</strong> explored</span>
+              </div>
             </div>
-            <p className="page-heading__note">
-              {stats.statesVisited} of {stats.statesTotal} states so far — tap any state for the story.
-            </p>
-          </div>
-          <StatsCards regions={regions} stats={stats} />
-
-          <div className="atlas-layout">
-            <TravelMap
-              metros={metroAreas}
-              onSelectState={selectState}
-              onSelectMetro={selectMetro}
-              onSelectPark={selectPark}
-              parks={parkBoundaries}
-              selectedPlace={selectedPlace}
-              selectedStateCode={selectedStateCode}
-              states={atlasStates}
-            />
             <StateDetailPanel
               selectedItem={selectedPlace}
               state={selectedState}
               states={atlasStates}
             />
-          </div>
+          </aside>
         </main>
       )}
     </div>

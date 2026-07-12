@@ -1,20 +1,52 @@
-import { ArrowRight, Crown, Heart, MapPinned, Sparkles, Trophy } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { ArrowRight, Compass, MapPinned, Medal, Mountain, Sparkles } from 'lucide-react'
 import { getOfficialParkDisplayName } from '../data/nationalParks'
 import { formatStatus } from '../utils/formatters'
 import { calculateTotal, getRankedRows } from '../utils/parkScoring'
 import { RegionalProgress } from './StatsCards'
 
+function prefersReducedMotion() {
+  return typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+}
+
+function useCountUp(value, duration = 950) {
+  const [display, setDisplay] = useState(prefersReducedMotion() ? value : 0)
+  useEffect(() => {
+    if (typeof value !== 'number' || Number.isNaN(value) || prefersReducedMotion()) {
+      setDisplay(value)
+      return undefined
+    }
+    let frame = 0
+    const start = performance.now()
+    const tick = (now) => {
+      const progress = Math.min(1, (now - start) / duration)
+      const eased = 1 - Math.pow(1 - progress, 3)
+      setDisplay(Math.round(value * eased))
+      if (progress < 1) frame = requestAnimationFrame(tick)
+    }
+    frame = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(frame)
+  }, [value, duration])
+  return display
+}
+
+function StatStamp({ value, unit, label, sub, tone, rotate, delay }) {
+  const shown = useCountUp(value)
+  return (
+    <div className="stat-stamp" data-tone={tone} style={{ '--rot': `${rotate}deg`, '--d': `${delay}ms` }}>
+      <span className="stat-stamp__ring" aria-hidden="true" />
+      <strong>{shown}{unit && <em>{unit}</em>}</strong>
+      <span className="stat-stamp__label">{label}</span>
+      {sub && <small>{sub}</small>}
+    </div>
+  )
+}
+
 function formatUpdatedAt(value) {
   if (!value) return ''
-
   const date = new Date(value)
   if (Number.isNaN(date.getTime())) return ''
-
-  return new Intl.DateTimeFormat('en', {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-  }).format(date)
+  return new Intl.DateTimeFormat('en', { day: 'numeric', month: 'short', year: 'numeric' }).format(date)
 }
 
 function getLatestState(states) {
@@ -23,140 +55,130 @@ function getLatestState(states) {
     .sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt))[0]
 }
 
-function getFavoriteStates(states) {
-  return states.filter((state) => state.status === 'favorite').slice(0, 4)
-}
-
 export function OverviewSection({ achievements, parkRankings, regions, states, stats }) {
   const progress = Math.min(100, Math.max(0, Math.round(stats.completionPercent)))
   const latestState = getLatestState(states)
-  const favoriteStates = getFavoriteStates(states)
   const unlockedCount = achievements.filter((achievement) => achievement.unlocked).length
-  const topParkRow = getRankedRows(parkRankings)[0]
-  const topPark = topParkRow?.ranking
+  const topPark = getRankedRows(parkRankings)[0]?.ranking
+  const latestLabel = latestState
+    ? `${formatStatus(latestState.status)}${formatUpdatedAt(latestState.updatedAt) ? ` · ${formatUpdatedAt(latestState.updatedAt)}` : ''}`
+    : 'Ready for the first pin'
+  const topParkLabel = topPark ? `${calculateTotal(topPark.scores)}/100 total score` : 'Rank a park to start the wall'
 
-  const heroStats = [
-    [stats.statesVisited, `of ${stats.statesTotal} states`],
-    [stats.citiesLogged, 'cities logged'],
-    [stats.parksMarked, 'parks explored'],
-    [unlockedCount, 'milestones earned'],
+  const stamps = [
+    { value: stats.statesVisited, label: 'states', sub: `of ${stats.statesTotal}`, tone: 'sky', rotate: -3, delay: 0 },
+    { value: stats.citiesLogged, label: 'cities', sub: 'wandered', tone: 'terracotta', rotate: 2.5, delay: 90 },
+    { value: stats.parksMarked, label: 'parks', sub: 'explored', tone: 'forest', rotate: -1.5, delay: 180 },
+    { value: unlockedCount, label: 'stamps', sub: 'earned', tone: 'gold', rotate: 3, delay: 270 },
   ]
 
   return (
-    <main className="page page--overview">
-      <section className="hero" aria-labelledby="hero-title">
-        <div className="hero__copy">
-          <p className="eyebrow">Altay &amp; Aidi</p>
-          <h1 id="hero-title">
-            Every trip, one map.
+    <main className="page journey">
+      <section className="route-board" aria-labelledby="overview-title">
+        <div className="route-board__lead">
+          <span className="passport-mark">
+            <Compass size={14} aria-hidden="true" />
+            Altay &amp; Aidi · field atlas
+          </span>
+          <h1 className="journey-title" id="overview-title">
+            Everywhere we&rsquo;ve{' '}
+            <span className="rotator" aria-label="wandered">
+              <span className="rotator__list">
+                <span className="grad-text">wandered.</span>
+                <span className="grad-text">hiked.</span>
+                <span className="grad-text">road-tripped.</span>
+                <span className="grad-text">flown.</span>
+                <span className="grad-text">wandered.</span>
+              </span>
+            </span>
           </h1>
-          <p className="hero__lede">
-            The states we&rsquo;ve crossed, the cities we&rsquo;ve wandered, and the parks
-            we keep arguing about ranking — kept in one living travel journal.
+          <p className="journey-lede">
+            A map we keep coloring in, a wall of park posters we keep arguing over, and a little
+            book of stamps we collect along the way.
           </p>
-          <div className="hero__actions">
-            <a className="button" href="#/states">
-              Explore the map
-              <ArrowRight size={17} aria-hidden="true" />
-            </a>
-            <a className="button button--secondary" href="#/parks">
-              Park rankings
-            </a>
+          <div className="journey-cta">
+            <a className="button" href="#/states">Open the map <ArrowRight size={17} aria-hidden="true" /></a>
+            <a className="button button--secondary" href="#/parks">The park wall</a>
           </div>
         </div>
 
-        <div
-          className="hero__ring"
-          style={{ '--progress': `${progress}%` }}
-          role="img"
-          aria-label={`${progress} percent of the United States explored`}
-        >
-          <span className="hero__ring-track" aria-hidden="true" />
-          <div className="hero__ring-center">
-            <strong>{progress}%</strong>
-            <span>explored</span>
+        <div className="route-board__right">
+          <aside className="dial route-board__dial" style={{ '--p': `${progress}%` }} aria-label={`${progress}% of the lower 48 explored`}>
+            <span className="dial__dashes" aria-hidden="true" />
+            <span className="dial__ring" aria-hidden="true" />
+            <span className="dial__face">
+              <strong>{progress}<em>%</em></strong>
+              <span>explored</span>
+            </span>
+          </aside>
+          <div className="route-board__ticket" aria-label="Latest dispatch">
+            <span>Latest stop</span>
+            <strong>{latestState ? latestState.name : 'Open road'}</strong>
+            <small>{latestLabel}</small>
           </div>
         </div>
-
-        <dl className="hero__stats">
-          {heroStats.map(([value, label]) => (
-            <div className="hero__stat" key={label}>
-              <dd>{value}</dd>
-              <dt>{label}</dt>
-            </div>
-          ))}
-        </dl>
       </section>
 
-      <section className="highlights" aria-label="Latest highlights">
-        <a className="highlight-card" href="#/states">
-          <span className="highlight-card__icon highlight-card__icon--sky" aria-hidden="true">
-            <MapPinned size={18} />
-          </span>
-          <div>
-            <h2>{latestState ? latestState.name : 'The map is waiting'}</h2>
-            <p>
-              {latestState
-                ? `Latest entry — ${formatStatus(latestState.status)}${formatUpdatedAt(latestState.updatedAt) ? `, ${formatUpdatedAt(latestState.updatedAt)}` : ''}`
-                : 'Open the map and start marking states.'}
-            </p>
-          </div>
-          <ArrowRight className="highlight-card__arrow" size={16} aria-hidden="true" />
-        </a>
+      <section className="route-dashboard" aria-label="Travel atlas overview">
+        <div className="route-dashboard__metrics" aria-label="By the numbers">
+          {stamps.map((stamp) => (
+            <StatStamp key={stamp.label} {...stamp} />
+          ))}
+        </div>
 
-        <a className="highlight-card" href="#/parks">
-          <span className="highlight-card__icon highlight-card__icon--gold" aria-hidden="true">
-            <Crown size={18} />
-          </span>
-          <div>
-            <h2>{topPark ? getOfficialParkDisplayName(topPark.parkName) : 'No parks ranked yet'}</h2>
-            <p>
-              {topPark
-                ? `Reigning champion — ${calculateTotal(topPark.scores)}/50`
-                : 'Rank a park and the champion appears here.'}
-            </p>
-          </div>
-          <ArrowRight className="highlight-card__arrow" size={16} aria-hidden="true" />
-        </a>
+        <div className="route-stops" aria-label="Explore">
+          <a className="route-stop route-stop--map" href="#/states">
+            <span className="route-stop__pin" aria-hidden="true">01</span>
+            <span className="route-stop__icon" aria-hidden="true"><MapPinned size={18} /></span>
+            <span className="route-stop__meta">Map route</span>
+            <strong>{latestState ? latestState.name : 'Where we’ve been'}</strong>
+            <small>{latestState ? latestLabel : 'Open the map and start marking states.'}</small>
+            <span className="route-stop__go">Explore the atlas <ArrowRight size={15} aria-hidden="true" /></span>
+          </a>
 
-        <a className="highlight-card" href="#/achievements">
-          <span className="highlight-card__icon highlight-card__icon--mint" aria-hidden="true">
-            <Trophy size={18} />
-          </span>
-          <div>
-            <h2>{unlockedCount} of {achievements.length} milestones</h2>
-            <p>Badges unlock as the map fills in.</p>
-          </div>
-          <ArrowRight className="highlight-card__arrow" size={16} aria-hidden="true" />
-        </a>
+          <a className="route-stop route-stop--parks" href="#/parks">
+            <span className="route-stop__pin" aria-hidden="true">02</span>
+            <span className="route-stop__icon" aria-hidden="true"><Mountain size={18} /></span>
+            <span className="route-stop__meta">Poster wall</span>
+            <strong>{topPark ? getOfficialParkDisplayName(topPark.parkName) : 'Park rankings'}</strong>
+            <small>{topParkLabel}</small>
+            <span className="route-stop__go">See the wall <ArrowRight size={15} aria-hidden="true" /></span>
+          </a>
 
-        <a className="highlight-card" href="#/states">
-          <span className="highlight-card__icon highlight-card__icon--terracotta" aria-hidden="true">
-            <Heart size={18} />
-          </span>
-          <div>
-            <h2>
-              {favoriteStates.length
-                ? favoriteStates.map((state) => state.name).join(', ')
-                : 'Favorites are waiting'}
-            </h2>
-            <p>
-              {favoriteStates.length
-                ? 'The states that earned the favorite stamp.'
-                : 'Mark a state as a favorite and it lands here.'}
-            </p>
+          <a className="route-stop route-stop--badges" href="#/achievements">
+            <span className="route-stop__pin" aria-hidden="true">03</span>
+            <span className="route-stop__icon" aria-hidden="true"><Medal size={18} /></span>
+            <span className="route-stop__meta">Stamp book</span>
+            <strong>{unlockedCount} of {achievements.length} earned</strong>
+            <small>Milestones unlock as the map and poster wall fill in.</small>
+            <span className="route-stop__go">Open the quest board <ArrowRight size={15} aria-hidden="true" /></span>
+          </a>
+        </div>
+
+        <aside className="dispatch-panel" aria-label="Atlas dispatch">
+          <p className="eyebrow"><Sparkles size={15} aria-hidden="true" /> On deck</p>
+          <h2>The next good excuse to go.</h2>
+          <div className="dispatch-panel__rows">
+            <div>
+              <span>Current champion</span>
+              <strong>{topPark ? getOfficialParkDisplayName(topPark.parkName) : 'No park yet'}</strong>
+            </div>
+            <div>
+              <span>Route coverage</span>
+              <strong>{stats.statesVisited}/{stats.statesTotal} states</strong>
+            </div>
+            <div>
+              <span>Stamp progress</span>
+              <strong>{unlockedCount}/{achievements.length} earned</strong>
+            </div>
           </div>
-          <ArrowRight className="highlight-card__arrow" size={16} aria-hidden="true" />
-        </a>
+        </aside>
       </section>
 
       <section className="overview-regions" aria-label="Progress by region">
         <div className="section-header">
           <div>
-            <p className="eyebrow">
-              <Sparkles size={15} aria-hidden="true" />
-              Region by region
-            </p>
+            <p className="eyebrow"><Sparkles size={15} aria-hidden="true" /> Region by region</p>
             <h2>How the country is filling in</h2>
           </div>
           <p>{stats.parksMarked} parks logged across {stats.statesVisited} states.</p>

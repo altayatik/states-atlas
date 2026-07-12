@@ -3,7 +3,7 @@ import { Compass, PencilLine } from 'lucide-react'
 const navItems = [
   ['overview', '#/overview', 'Overview'],
   ['states', '#/states', 'Map'],
-  ['parks', '#/parks', 'Parks'],
+  ['parks', '#/parks', 'National Parks'],
   ['achievements', '#/achievements', 'Milestones'],
 ]
 

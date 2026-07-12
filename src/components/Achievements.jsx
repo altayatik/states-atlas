@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { createPortal } from 'react-dom'
 import {
   Compass,
   Diamond,
@@ -18,6 +19,7 @@ import {
   Waves,
   X,
 } from 'lucide-react'
+import { achievementCategories } from '../data/achievements'
 
 const achievementIcons = {
   compass: Compass,
@@ -37,21 +39,53 @@ const achievementIcons = {
   waves: Waves,
 }
 
-const canadaAchievementIds = new Set([
-  'canada_stamp',
-  'canadian_park_starter',
-  'canada_province_sampler',
-  'canada_halfway',
-  'canadian_park_trail',
-  'north_of_border_city',
-])
+function AchievementTile({ achievement, index, onSelect }) {
+  const Icon = achievement.unlocked ? achievementIcons[achievement.icon] ?? Stamp : Lock
+
+  return (
+    <article
+      className={`achievement${achievement.unlocked ? ' achievement--unlocked' : ''}`}
+      style={{ '--achievement-accent': achievement.accent, '--i': index }}
+    >
+      <button
+        className="achievement__button"
+        aria-label={`${achievement.name}: ${achievement.unlocked ? 'Unlocked' : 'Locked'}, ${achievement.progressText}`}
+        type="button"
+        onClick={() => onSelect(achievement.id)}
+      >
+        <span className="achievement__icon">
+          <Icon size={19} aria-hidden="true" />
+        </span>
+        <span className="achievement__text">
+          <strong>{achievement.name}</strong>
+          <small>{achievement.unlocked ? 'Unlocked' : achievement.progressText}</small>
+        </span>
+      </button>
+    </article>
+  )
+}
 
 export function Achievements({ achievements }) {
   const [selectedId, setSelectedId] = useState('')
   const selectedAchievement = achievements.find((achievement) => achievement.id === selectedId)
-  const canadaAchievements = achievements.filter((achievement) => canadaAchievementIds.has(achievement.id))
-  const mainAchievements = achievements.filter((achievement) => !canadaAchievements.includes(achievement))
-  const orderedAchievements = [...mainAchievements, ...canadaAchievements]
+  const unlockedCount = achievements.filter((achievement) => achievement.unlocked).length
+
+  useEffect(() => {
+    if (!selectedId) return undefined
+    const onKeyDown = (event) => {
+      if (event.key === 'Escape') setSelectedId('')
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [selectedId])
+
+  const grouped = achievementCategories
+    .map((category) => ({
+      ...category,
+      items: achievements.filter((achievement) => achievement.category === category.id),
+    }))
+    .filter((category) => category.items.length)
+
   const SelectedIcon = selectedAchievement
     ? selectedAchievement.unlocked
       ? achievementIcons[selectedAchievement.icon] ?? Stamp
@@ -59,49 +93,42 @@ export function Achievements({ achievements }) {
     : null
 
   return (
-    <section className="content-section achievements-section" aria-labelledby="achievements-title">
-      <div className="section-header">
-        <div>
-          <p className="eyebrow">Quest board</p>
-          <h2 id="achievements-title">Achievement badges</h2>
-        </div>
-        <p>Unlocked tiles stay vivid, locked ones stay quiet, and each badge keeps its progress available on tap.</p>
-      </div>
-      <div className="achievement-grid">
-        {orderedAchievements.map((achievement, index) => {
-          const Icon = achievement.unlocked
-            ? achievementIcons[achievement.icon] ?? Stamp
-            : Lock
+    <main className="page page--achievements">
+      <header className="quest-head">
+        <p className="eyebrow">Quest board</p>
+        <h1>Milestones</h1>
+        <p className="quest-head__note">
+          <strong>{unlockedCount}</strong> of {achievements.length} badges earned — collected across the
+          map, the cities, and the poster wall.
+        </p>
+      </header>
 
-          return (
-            <article
-              className={[
-                'achievement',
-                achievement.unlocked ? 'achievement--unlocked' : '',
-              ].filter(Boolean).join(' ')}
-              key={achievement.id}
-              style={{ '--achievement-accent': achievement.accent, '--i': index }}
-            >
-              <button
-                className="achievement__button"
-                aria-label={`${achievement.name}: ${achievement.unlocked ? 'Unlocked' : 'Locked'}, ${achievement.progressText}`}
-                type="button"
-                onClick={() => setSelectedId(achievement.id)}
-              >
-                <span className="achievement__icon">
-                  <Icon size={17} aria-hidden="true" />
-                </span>
-                <span className="achievement__text">
-                  <strong>{achievement.name}</strong>
-                  <small>{achievement.unlocked ? 'Unlocked' : 'Locked'} · {achievement.progressText}</small>
-                </span>
-              </button>
-            </article>
-          )
-        })}
-      </div>
+      {grouped.map((category) => {
+        const earned = category.items.filter((item) => item.unlocked).length
+        return (
+          <section className="quest-cat" key={category.id} aria-labelledby={`cat-${category.id}`}>
+            <div className="quest-cat__head">
+              <div>
+                <h2 id={`cat-${category.id}`}>{category.label}</h2>
+                <p>{category.blurb}</p>
+              </div>
+              <span className="quest-cat__count">{earned}<em>/{category.items.length}</em></span>
+            </div>
+            <div className="achievement-grid">
+              {category.items.map((achievement, index) => (
+                <AchievementTile
+                  achievement={achievement}
+                  index={index}
+                  key={achievement.id}
+                  onSelect={setSelectedId}
+                />
+              ))}
+            </div>
+          </section>
+        )
+      })}
 
-      {selectedAchievement && (
+      {selectedAchievement && createPortal(
         <div
           className="achievement-modal-backdrop"
           role="presentation"
@@ -133,8 +160,9 @@ export function Achievements({ achievements }) {
             <p>{selectedAchievement.description}</p>
             <span>{selectedAchievement.progressText}</span>
           </article>
-        </div>
+        </div>,
+        document.body,
       )}
-    </section>
+    </main>
   )
 }
