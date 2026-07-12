@@ -184,7 +184,7 @@ export function OverviewSection({ achievements, parkRankings, regions, states, s
             </div>
             <div>
               <span>Route coverage</span>
-              <strong>{stats.statesVisited}/{stats.statesTotal} states</strong>
+              <strong>{stats.statesVisited}/{stats.statesTotal} US states</strong>
             </div>
             <div>
               <span>Stamp progress</span>
