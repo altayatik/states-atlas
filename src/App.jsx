@@ -151,6 +151,24 @@ function App() {
   }, [])
 
   useEffect(() => {
+    if (typeof document === 'undefined') return undefined
+
+    const root = document.documentElement
+    const syncSceneMotion = () => {
+      root.dataset.atlasSection = isEditorRoute ? 'edit' : activeSection
+      root.dataset.atlasMotion = !document.hidden && !isEditorRoute && activeSection === 'overview'
+        ? 'running'
+        : 'paused'
+    }
+
+    syncSceneMotion()
+    document.addEventListener('visibilitychange', syncSceneMotion)
+    return () => {
+      document.removeEventListener('visibilitychange', syncSceneMotion)
+    }
+  }, [activeSection, isEditorRoute])
+
+  useEffect(() => {
     if (!isEditorRoute) {
       setIsCheckingEditorAuth(false)
       return undefined

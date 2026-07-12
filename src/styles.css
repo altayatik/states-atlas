@@ -119,9 +119,20 @@ a { color: inherit; text-decoration: none; }
     linear-gradient(178deg, #ffe6c4 0%, #fbe6cd 26%, #f6ecd6 58%, #edf0d8 100%);
 }
 
+.scene-motion {
+  animation-play-state: paused !important;
+  contain: layout style;
+  will-change: transform;
+}
+
+html[data-atlas-motion='running'] .scene-motion {
+  animation-play-state: running !important;
+}
+
 .scene-sun {
   position: absolute; top: 5vh; right: 13vw; width: clamp(120px, 12vw, 180px); aspect-ratio: 1; border-radius: 50%;
   background: radial-gradient(circle, rgba(255, 226, 156, 0.95), rgba(255, 202, 120, 0.55) 52%, transparent 72%);
+  animation: sun-pulse 9s ease-in-out infinite;
 }
 @keyframes sun-pulse { 0%, 100% { transform: scale(1); opacity: 0.9; } 50% { transform: scale(1.07); opacity: 1; } }
 
@@ -129,22 +140,31 @@ a { color: inherit; text-decoration: none; }
 .aurora__glow--peach { width: 44vw; height: 44vw; top: 4vh; right: -6vw; background: radial-gradient(circle at 55% 40%, rgba(233, 138, 92, 0.5), transparent 66%); }
 .aurora__glow--gold { width: 50vw; height: 50vw; bottom: -20vh; left: 6vw; background: radial-gradient(circle at 50% 50%, rgba(232, 178, 84, 0.42), transparent 66%); }
 
-.cloud { position: absolute; height: 34px; border-radius: 40px; background: rgba(255, 255, 255, 0.72); filter: blur(7px); }
+.cloud { position: absolute; left: 0; height: 34px; border-radius: 40px; background: rgba(255, 255, 255, 0.72); filter: blur(5px); }
 .cloud::before, .cloud::after { content: ''; position: absolute; border-radius: 50%; background: inherit; }
 .cloud::before { width: 55%; height: 185%; left: 14%; top: -62%; }
 .cloud::after { width: 42%; height: 150%; right: 15%; top: -42%; }
-.cloud--a { top: 13vh; left: 32vw; width: 190px; }
-.cloud--b { top: 26vh; left: 64vw; width: 130px; opacity: 0.8; }
-.cloud--c { top: 8vh; left: 78vw; width: 150px; opacity: 0.85; }
-@keyframes cloud-drift { from { transform: translateX(-26vw); } to { transform: translateX(128vw); } }
+.cloud--a { top: 13vh; width: 190px; animation: scene-cross 72s linear -20s infinite; --from-x: -220px; --from-y: 0; --to-x: calc(100vw + 260px); --to-y: 0; }
+.cloud--b { top: 26vh; width: 130px; opacity: 0.8; animation: scene-cross 96s linear -56s infinite; --from-x: -160px; --from-y: 0; --to-x: calc(100vw + 220px); --to-y: 0; }
+.cloud--c { top: 8vh; width: 150px; opacity: 0.85; animation: scene-cross 84s linear -70s infinite; --from-x: -180px; --from-y: 0; --to-x: calc(100vw + 240px); --to-y: 0; }
 
 .scene-sky { position: absolute; top: 0; left: 0; width: 100%; height: 56vh; }
 .airline { fill: none; stroke: rgba(74, 56, 34, 0.16); stroke-width: 1.6; stroke-dasharray: 2 10; stroke-linecap: round; }
 .airline--dim { stroke: rgba(74, 56, 34, 0.09); }
-.flyer text { font-size: 22px; }
-.flyer--small text { font-size: 17px; }
-.flyer--a { transform: translate(850px, 164px) rotate(-10deg); }
-.flyer--b { transform: translate(1115px, 265px) rotate(10deg); }
+.scene-flyer {
+  position: absolute; left: 0; top: 0; font-size: 22px; line-height: 1;
+  animation: scene-fly 44s linear infinite;
+}
+.scene-flyer--a {
+  animation-duration: 44s; animation-delay: -18s;
+  --from-x: -4vw; --from-y: 15vh; --mid-x: 50vw; --mid-y: 10vh; --to-x: 104vw; --to-y: 18vh;
+  --rot-a: -6deg; --rot-b: 4deg; --rot-c: -8deg;
+}
+.scene-flyer--b {
+  font-size: 17px; animation-duration: 62s; animation-delay: -42s;
+  --from-x: -5vw; --from-y: 33vh; --mid-x: 53vw; --mid-y: 28vh; --to-x: 105vw; --to-y: 31vh;
+  --rot-a: 5deg; --rot-b: -4deg; --rot-c: 7deg;
+}
 
 /* warm mountain silhouette on the horizon */
 .aurora__ridge {
@@ -157,10 +177,14 @@ a { color: inherit; text-decoration: none; }
 .scene-road { position: absolute; bottom: 0; left: 0; width: 100%; height: 30vh; }
 .road-bed { fill: none; stroke: rgba(108, 84, 56, 0.32); stroke-width: 24; stroke-linecap: round; }
 .road-line { fill: none; stroke: rgba(255, 236, 178, 0.7); stroke-width: 3; stroke-dasharray: 14 20; stroke-linecap: round; }
-.roader text { font-size: 26px; transform: scaleX(-1); transform-box: fill-box; transform-origin: center; }
-.roader--a { transform: translate(1035px, 158px) rotate(7deg); }
-.roader--b { transform: translate(1325px, 188px) rotate(18deg); }
-.roader--c { transform: translate(455px, 205px) rotate(-5deg); }
+.scene-vehicle {
+  position: absolute; left: 0; bottom: 0; font-size: 26px; line-height: 1;
+  transform-origin: center;
+  animation: road-drive 34s linear infinite;
+}
+.scene-vehicle--a { animation-duration: 34s; --delay: -8s; animation-delay: var(--delay); }
+.scene-vehicle--b { animation-duration: 48s; --delay: -26s; animation-delay: var(--delay); }
+.scene-vehicle--c { animation-duration: 58s; --delay: -44s; animation-delay: var(--delay); }
 
 /* 4. TEXT ------------------------------------------------------- */
 h1, h2, h3 {
@@ -1465,6 +1489,22 @@ input[type='checkbox'] { width: 1.1em; height: 1.1em; margin: 0; accent-color: v
 @keyframes glow-b { to { transform: translate(-14vw, 15vh) scale(1.12); } }
 @keyframes glow-c { to { transform: translate(-12vw, -15vh) scale(1.26); } }
 @keyframes dash-flow { to { stroke-dashoffset: -260; } }
+@keyframes scene-cross {
+  from { transform: translate3d(var(--from-x), var(--from-y), 0); }
+  to { transform: translate3d(var(--to-x), var(--to-y), 0); }
+}
+@keyframes scene-fly {
+  0% { transform: translate3d(var(--from-x), var(--from-y), 0) rotate(var(--rot-a)); }
+  50% { transform: translate3d(var(--mid-x), var(--mid-y), 0) rotate(var(--rot-b)); }
+  100% { transform: translate3d(var(--to-x), var(--to-y), 0) rotate(var(--rot-c)); }
+}
+@keyframes road-drive {
+  0% { transform: translate3d(-6vw, -3vh, 0) rotate(-7deg); }
+  24% { transform: translate3d(24vw, -10vh, 0) rotate(-10deg); }
+  50% { transform: translate3d(55vw, -7vh, 0) rotate(7deg); }
+  76% { transform: translate3d(82vw, -13vh, 0) rotate(-5deg); }
+  100% { transform: translate3d(106vw, -8vh, 0) rotate(11deg); }
+}
 
 @keyframes compass-spin { 0%, 72%, 100% { transform: rotate(0deg); } 86% { transform: rotate(24deg); } }
 .topbar__brand:hover .topbar__mark { animation: compass-spin 1.1s var(--ease) both; }
@@ -1478,6 +1518,7 @@ input[type='checkbox'] { width: 1.1em; height: 1.1em; margin: 0; accent-color: v
     animation-duration: 0.001ms !important; animation-iteration-count: 1 !important;
     transition-duration: 0.001ms !important; scroll-behavior: auto !important;
   }
+  .scene-motion { animation: none !important; }
 }
 
 /* 18. RESPONSIVE ------------------------------------------------ */
