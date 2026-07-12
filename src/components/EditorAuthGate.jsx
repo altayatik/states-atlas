@@ -1,5 +1,9 @@
 import { LogIn, LogOut, ShieldCheck } from 'lucide-react'
-import { ATLAS_ADMIN_EMAILS } from '../services/editorAuth'
+
+const ATLAS_ADMIN_EMAILS = [
+  'altayatik01@gmail.com',
+  'aidima821@gmail.com',
+]
 
 export function EditorAuthGate({ error, isSigningIn, onBack, onSignIn, onSignOut, user }) {
   const isWrongAccount = Boolean(user && !ATLAS_ADMIN_EMAILS.includes(user.email))

@@ -1,38 +1,44 @@
-import { useEffect, useMemo, useState } from 'react'
+import { lazy, Suspense, useEffect, useMemo, useState } from 'react'
 import { OverviewSection } from './components/OverviewSection'
-import { TravelMap } from './components/TravelMap'
-import { StateDetailPanel } from './components/StateDetailPanel'
-import { Achievements } from './components/Achievements'
-import { AtlasEditor } from './components/AtlasEditor'
 import { EditorAuthGate } from './components/EditorAuthGate'
-import { NationalParksEditor } from './components/NationalParksEditor'
-import { NationalParksSection } from './components/NationalParksSection'
 import { TravelNav } from './components/TravelNav'
 import { states as defaultStates } from './data/states'
-import { metroAreas } from './data/metroAreas'
 import { parkBoundaries } from './data/parkBoundaries'
 import { evaluateAchievements } from './utils/achievements'
 import { getRegionalProgress, getStats } from './utils/stats'
 import { isPlaceOptionSelected } from './utils/places'
 import { mergeStoredStates } from './utils/storage'
-import {
-  fetchStateTravelEntries,
-  isFirebaseConfigured,
-  upsertStateTravelEntry,
-} from './services/stateTravelApi'
-import {
-  createParkRanking,
-  deleteParkRanking,
-  fetchParkRankings,
-  updateParkRanking,
-} from './services/parksApi'
-import {
-  isAtlasAdmin,
-  signInToEditor,
-  signOutOfEditor,
-  subscribeEditorAuth,
-} from './services/editorAuth'
 import './styles.css'
+
+const Achievements = lazy(() => import('./components/Achievements').then((module) => ({ default: module.Achievements })))
+const AtlasEditor = lazy(() => import('./components/AtlasEditor').then((module) => ({ default: module.AtlasEditor })))
+const NationalParksEditor = lazy(() => import('./components/NationalParksEditor').then((module) => ({ default: module.NationalParksEditor })))
+const NationalParksSection = lazy(() => import('./components/NationalParksSection').then((module) => ({ default: module.NationalParksSection })))
+const StatesSection = lazy(() => import('./components/StatesSection').then((module) => ({ default: module.StatesSection })))
+
+const ATLAS_ADMIN_EMAILS = [
+  'altayatik01@gmail.com',
+  'aidima821@gmail.com',
+]
+
+function isAtlasAdminUser(user) {
+  return Boolean(user && ATLAS_ADMIN_EMAILS.includes(user.email) && user.emailVerified)
+}
+
+function runAfterFirstPaint(callback) {
+  if (typeof window === 'undefined') {
+    callback()
+    return () => {}
+  }
+
+  if ('requestIdleCallback' in window) {
+    const idleId = window.requestIdleCallback(callback, { timeout: 1200 })
+    return () => window.cancelIdleCallback(idleId)
+  }
+
+  const timeoutId = window.setTimeout(callback, 120)
+  return () => window.clearTimeout(timeoutId)
+}
 
 function getParkMarkerForRanking(ranking) {
   if (!ranking || ranking.isCustom) return null
@@ -145,19 +151,43 @@ function App() {
   }, [])
 
   useEffect(() => {
-    setIsCheckingEditorAuth(true)
-    return subscribeEditorAuth((user) => {
-      setEditorUser(user)
-      setGateError('')
+    if (!isEditorRoute) {
       setIsCheckingEditorAuth(false)
+      return undefined
+    }
+
+    let unsubscribe = () => {}
+    let isMounted = true
+    setIsCheckingEditorAuth(true)
+
+    import('./services/editorAuth').then(({ subscribeEditorAuth }) => {
+      if (!isMounted) return
+      unsubscribe = subscribeEditorAuth((user) => {
+        setEditorUser(user)
+        setGateError('')
+        setIsCheckingEditorAuth(false)
+      })
+    }).catch((error) => {
+      console.warn('Unable to load editor auth.', error)
+      if (isMounted) {
+        setEditorUser(null)
+        setIsCheckingEditorAuth(false)
+      }
     })
-  }, [])
+
+    return () => {
+      isMounted = false
+      unsubscribe()
+    }
+  }, [isEditorRoute])
 
   useEffect(() => {
     let isMounted = true
+    let cancelScheduledLoad = () => {}
 
     async function loadEntries() {
       try {
+        const { fetchStateTravelEntries } = await import('./services/stateTravelApi')
         const entries = await fetchStateTravelEntries()
         if (isMounted) setStates(mergeStoredStates(defaultStates, entries))
       } catch (error) {
@@ -168,20 +198,26 @@ function App() {
       }
     }
 
-    loadEntries()
+    cancelScheduledLoad = isEditorRoute ? (() => {
+      loadEntries()
+      return () => {}
+    })() : runAfterFirstPaint(loadEntries)
 
     return () => {
       isMounted = false
+      cancelScheduledLoad()
     }
-  }, [])
+  }, [isEditorRoute])
 
   useEffect(() => {
     let isMounted = true
+    let cancelScheduledLoad = () => {}
 
     async function loadRankings() {
       setParksLoadError('')
 
       try {
+        const { fetchParkRankings } = await import('./services/parksApi')
         const rankings = await fetchParkRankings()
         if (isMounted) setParkRankings(rankings)
       } catch (error) {
@@ -195,12 +231,16 @@ function App() {
       }
     }
 
-    loadRankings()
+    cancelScheduledLoad = isEditorRoute ? (() => {
+      loadRankings()
+      return () => {}
+    })() : runAfterFirstPaint(loadRankings)
 
     return () => {
       isMounted = false
+      cancelScheduledLoad()
     }
-  }, [])
+  }, [isEditorRoute])
 
   const atlasStates = useMemo(
     () => mergeStatesWithParkRankings(states, parkRankings),
@@ -234,11 +274,13 @@ function App() {
   }
 
   const refreshEntries = async () => {
+    const { fetchStateTravelEntries } = await import('./services/stateTravelApi')
     const entries = await fetchStateTravelEntries()
     setStates(mergeStoredStates(defaultStates, entries))
   }
 
   const persistState = async (draft) => {
+    const { isFirebaseConfigured, upsertStateTravelEntry } = await import('./services/stateTravelApi')
     await upsertStateTravelEntry(draft)
 
     if (isFirebaseConfigured) {
@@ -256,6 +298,7 @@ function App() {
     setIsSigningIn(true)
 
     try {
+      const { signInToEditor } = await import('./services/editorAuth')
       await signInToEditor()
     } catch (error) {
       setGateError(error.message || 'Couldn’t sign in with Google.')
@@ -266,10 +309,12 @@ function App() {
 
   const handleEditorSignOut = async () => {
     setGateError('')
+    const { signOutOfEditor } = await import('./services/editorAuth')
     await signOutOfEditor()
   }
 
   const refreshParkRankings = async () => {
+    const { fetchParkRankings } = await import('./services/parksApi')
     const rankings = await fetchParkRankings()
     setParkRankings(rankings)
     return rankings
@@ -284,6 +329,7 @@ function App() {
       if (!state) return
       if (isPlaceOptionSelected(state.parksVisited ?? [], marker.name)) return
 
+      const { upsertStateTravelEntry } = await import('./services/stateTravelApi')
       await upsertStateTravelEntry({
         ...state,
         parksVisited: uniquePlaces([...(state.parksVisited ?? []), marker.name]),
@@ -293,6 +339,7 @@ function App() {
   }
 
   const persistParkRanking = async (draft) => {
+    const { createParkRanking, updateParkRanking } = await import('./services/parksApi')
     const savedRanking = draft.id
       ? await updateParkRanking(draft.id, draft)
       : await createParkRanking(draft)
@@ -304,6 +351,7 @@ function App() {
   }
 
   const removeParkRanking = async (rankingId) => {
+    const { deleteParkRanking } = await import('./services/parksApi')
     await deleteParkRanking(rankingId)
     await refreshParkRankings()
   }
@@ -316,7 +364,7 @@ function App() {
     )
   }
 
-  if (isEditorRoute && !isAtlasAdmin(editorUser)) {
+  if (isEditorRoute && !isAtlasAdminUser(editorUser)) {
     return (
       <div className="shell shell--editor">
         <EditorAuthGate
@@ -358,19 +406,23 @@ function App() {
           </nav>
 
           {activeEditorSection === 'parks' ? (
-            <NationalParksEditor
-              isLoading={isLoadingParks}
-              onDelete={removeParkRanking}
-              onSave={persistParkRanking}
-              rankings={parkRankings}
-            />
+            <Suspense fallback={<div className="sync-banner">Loading park editor...</div>}>
+              <NationalParksEditor
+                isLoading={isLoadingParks}
+                onDelete={removeParkRanking}
+                onSave={persistParkRanking}
+                rankings={parkRankings}
+              />
+            </Suspense>
           ) : (
-            <AtlasEditor
-              hideHeader
-              onBack={goPublic}
-              onSave={persistState}
-              states={atlasStates}
-            />
+            <Suspense fallback={<div className="sync-banner">Loading atlas editor...</div>}>
+              <AtlasEditor
+                hideHeader
+                onBack={goPublic}
+                onSave={persistState}
+                states={atlasStates}
+              />
+            </Suspense>
           )}
         </main>
       </div>
@@ -396,44 +448,32 @@ function App() {
           stats={stats}
         />
       ) : activeSection === 'parks' ? (
-        <NationalParksSection
-          activeScope={activeParkScope}
-          isLoading={isLoadingParks}
-          loadError={parksLoadError}
-          rankings={parkRankings}
-        />
+        <Suspense fallback={<div className="sync-banner">Loading park wall...</div>}>
+          <NationalParksSection
+            activeScope={activeParkScope}
+            isLoading={isLoadingParks}
+            loadError={parksLoadError}
+            rankings={parkRankings}
+          />
+        </Suspense>
       ) : activeSection === 'achievements' ? (
-        <Achievements achievements={achievements} />
+        <Suspense fallback={<div className="sync-banner">Loading milestones...</div>}>
+          <Achievements achievements={achievements} />
+        </Suspense>
       ) : (
-        <main className="states-stage">
-          <TravelMap
-            metros={metroAreas}
-            onSelectState={selectState}
+        <Suspense fallback={<div className="sync-banner">Loading map...</div>}>
+          <StatesSection
             onSelectMetro={selectMetro}
             onSelectPark={selectPark}
+            onSelectState={selectState}
             parks={parkBoundaries}
             selectedPlace={selectedPlace}
+            selectedState={selectedState}
             selectedStateCode={selectedStateCode}
             states={atlasStates}
+            stats={stats}
           />
-          <aside className="states-dock">
-            <div className="states-dock__hud glass-panel">
-              <p className="eyebrow">States &amp; provinces</p>
-              <h2 className="states-dock__title">Where we&rsquo;ve been</h2>
-              <div className="hud-rail">
-                <span><strong>{stats.statesVisited}</strong>/{stats.statesTotal} states</span>
-                <span><strong>{stats.citiesLogged}</strong> cities</span>
-                <span><strong>{stats.parksMarked}</strong> parks</span>
-                <span><strong>{Math.round(stats.completionPercent)}%</strong> explored</span>
-              </div>
-            </div>
-            <StateDetailPanel
-              selectedItem={selectedPlace}
-              state={selectedState}
-              states={atlasStates}
-            />
-          </aside>
-        </main>
+        </Suspense>
       )}
     </div>
   )

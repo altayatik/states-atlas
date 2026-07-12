@@ -113,6 +113,7 @@ a { color: inherit; text-decoration: none; }
   z-index: -3;
   overflow: hidden;
   pointer-events: none;
+  contain: strict;
   background:
     radial-gradient(85% 58% at 80% -8%, rgba(255, 214, 150, 0.62), transparent 52%),
     linear-gradient(178deg, #ffe6c4 0%, #fbe6cd 26%, #f6ecd6 58%, #edf0d8 100%);
@@ -121,28 +122,29 @@ a { color: inherit; text-decoration: none; }
 .scene-sun {
   position: absolute; top: 5vh; right: 13vw; width: clamp(120px, 12vw, 180px); aspect-ratio: 1; border-radius: 50%;
   background: radial-gradient(circle, rgba(255, 226, 156, 0.95), rgba(255, 202, 120, 0.55) 52%, transparent 72%);
-  animation: sun-pulse 8s ease-in-out infinite;
 }
 @keyframes sun-pulse { 0%, 100% { transform: scale(1); opacity: 0.9; } 50% { transform: scale(1.07); opacity: 1; } }
 
-.aurora__glow { position: absolute; border-radius: 50%; filter: blur(74px); opacity: 0.55; will-change: transform; }
-.aurora__glow--peach { width: 44vw; height: 44vw; top: 4vh; right: -6vw; background: radial-gradient(circle at 55% 40%, rgba(233, 138, 92, 0.5), transparent 66%); animation: glow-b 32s var(--ease) infinite alternate; }
-.aurora__glow--gold { width: 50vw; height: 50vw; bottom: -20vh; left: 6vw; background: radial-gradient(circle at 50% 50%, rgba(232, 178, 84, 0.42), transparent 66%); animation: glow-c 30s var(--ease) infinite alternate; }
+.aurora__glow { position: absolute; border-radius: 50%; filter: blur(52px); opacity: 0.5; }
+.aurora__glow--peach { width: 44vw; height: 44vw; top: 4vh; right: -6vw; background: radial-gradient(circle at 55% 40%, rgba(233, 138, 92, 0.5), transparent 66%); }
+.aurora__glow--gold { width: 50vw; height: 50vw; bottom: -20vh; left: 6vw; background: radial-gradient(circle at 50% 50%, rgba(232, 178, 84, 0.42), transparent 66%); }
 
 .cloud { position: absolute; height: 34px; border-radius: 40px; background: rgba(255, 255, 255, 0.72); filter: blur(7px); }
 .cloud::before, .cloud::after { content: ''; position: absolute; border-radius: 50%; background: inherit; }
 .cloud::before { width: 55%; height: 185%; left: 14%; top: -62%; }
 .cloud::after { width: 42%; height: 150%; right: 15%; top: -42%; }
-.cloud--a { top: 13vh; width: 190px; animation: cloud-drift 64s linear infinite; }
-.cloud--b { top: 26vh; width: 130px; opacity: 0.8; animation: cloud-drift 92s linear -30s infinite; }
-.cloud--c { top: 8vh; width: 150px; opacity: 0.85; animation: cloud-drift 80s linear -56s infinite; }
+.cloud--a { top: 13vh; left: 32vw; width: 190px; }
+.cloud--b { top: 26vh; left: 64vw; width: 130px; opacity: 0.8; }
+.cloud--c { top: 8vh; left: 78vw; width: 150px; opacity: 0.85; }
 @keyframes cloud-drift { from { transform: translateX(-26vw); } to { transform: translateX(128vw); } }
 
 .scene-sky { position: absolute; top: 0; left: 0; width: 100%; height: 56vh; }
-.airline { fill: none; stroke: rgba(74, 56, 34, 0.16); stroke-width: 1.6; stroke-dasharray: 2 10; stroke-linecap: round; animation: dash-flow 52s linear infinite; }
+.airline { fill: none; stroke: rgba(74, 56, 34, 0.16); stroke-width: 1.6; stroke-dasharray: 2 10; stroke-linecap: round; }
 .airline--dim { stroke: rgba(74, 56, 34, 0.09); }
 .flyer text { font-size: 22px; }
 .flyer--small text { font-size: 17px; }
+.flyer--a { transform: translate(850px, 164px) rotate(-10deg); }
+.flyer--b { transform: translate(1115px, 265px) rotate(10deg); }
 
 /* warm mountain silhouette on the horizon */
 .aurora__ridge {
@@ -156,6 +158,9 @@ a { color: inherit; text-decoration: none; }
 .road-bed { fill: none; stroke: rgba(108, 84, 56, 0.32); stroke-width: 24; stroke-linecap: round; }
 .road-line { fill: none; stroke: rgba(255, 236, 178, 0.7); stroke-width: 3; stroke-dasharray: 14 20; stroke-linecap: round; }
 .roader text { font-size: 26px; transform: scaleX(-1); transform-box: fill-box; transform-origin: center; }
+.roader--a { transform: translate(1035px, 158px) rotate(7deg); }
+.roader--b { transform: translate(1325px, 188px) rotate(18deg); }
+.roader--c { transform: translate(455px, 205px) rotate(-5deg); }
 
 /* 4. TEXT ------------------------------------------------------- */
 h1, h2, h3 {
@@ -574,7 +579,7 @@ input[type='checkbox'] { width: 1.1em; height: 1.1em; margin: 0; accent-color: v
   display: flex; flex-direction: column; align-items: center; gap: 0.8rem;
 }
 .dial { position: relative; width: clamp(176px, 20vw, 230px); aspect-ratio: 1; display: grid; place-items: center; animation: rise-in 0.6s var(--ease-out) both; }
-.dial__dashes { position: absolute; inset: -2px; border-radius: 50%; border: 2px dashed rgba(22, 35, 58, 0.16); animation: spin 46s linear infinite; }
+.dial__dashes { position: absolute; inset: -2px; border-radius: 50%; border: 2px dashed rgba(22, 35, 58, 0.16); }
 .dial__ring {
   position: absolute; inset: 8%; border-radius: 50%;
   background: conic-gradient(from -90deg, var(--sky) 0%, var(--mint) calc(var(--p) * 0.55), var(--gold) var(--p), rgba(22, 35, 58, 0.08) var(--p) 100%);
@@ -1473,14 +1478,6 @@ input[type='checkbox'] { width: 1.1em; height: 1.1em; margin: 0; accent-color: v
     animation-duration: 0.001ms !important; animation-iteration-count: 1 !important;
     transition-duration: 0.001ms !important; scroll-behavior: auto !important;
   }
-  /* keep the ambient travel scene alive — gentle and explicitly wanted */
-  .scene-sun { animation: sun-pulse 8s ease-in-out infinite !important; }
-  .aurora__glow--peach { animation: glow-b 32s var(--ease) infinite alternate !important; }
-  .aurora__glow--gold { animation: glow-c 30s var(--ease) infinite alternate !important; }
-  .cloud--a { animation: cloud-drift 64s linear infinite !important; }
-  .cloud--b { animation: cloud-drift 92s linear -30s infinite !important; }
-  .cloud--c { animation: cloud-drift 80s linear -56s infinite !important; }
-  .airline { animation: dash-flow 52s linear infinite !important; }
 }
 
 /* 18. RESPONSIVE ------------------------------------------------ */
