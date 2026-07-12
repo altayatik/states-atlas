@@ -4,9 +4,9 @@ const TANGENT_SAMPLE_PX = 2
 const sceneItems = [
   { selector: '.scene-flyer--a', path: '#fly-a', svg: '.scene-sky', duration: 42_000, lead: 0, rotateOffset: 0 },
   { selector: '.scene-flyer--b', path: '#fly-b', svg: '.scene-sky', duration: 58_000, lead: 20_000, rotateOffset: 0 },
-  { selector: '.scene-vehicle--a', path: '#road', svg: '.scene-road', duration: 30_000, lead: 0, rotateOffset: 0, flipX: true },
-  { selector: '.scene-vehicle--b', path: '#road', svg: '.scene-road', duration: 44_000, lead: 15_000, rotateOffset: 0, flipX: true },
-  { selector: '.scene-vehicle--c', path: '#road', svg: '.scene-road', duration: 56_000, lead: 34_000, rotateOffset: 0, flipX: true },
+  { selector: '.scene-vehicle--a', path: '#road', mobilePath: '#road-mobile', svg: '.scene-road', duration: 30_000, lead: 0, rotateOffset: 0, flipX: true },
+  { selector: '.scene-vehicle--b', path: '#road', mobilePath: '#road-mobile', svg: '.scene-road', duration: 44_000, lead: 15_000, rotateOffset: 0, flipX: true },
+  { selector: '.scene-vehicle--c', path: '#road', mobilePath: '#road-mobile', svg: '.scene-road', duration: 56_000, lead: 34_000, rotateOffset: 0, flipX: true },
 ]
 
 function getViewBox(svg) {
@@ -60,19 +60,33 @@ function getAngle(path, distance, length) {
 function buildItems() {
   return sceneItems.map((item) => {
     const element = document.querySelector(item.selector)
-    const path = document.querySelector(item.path)
+    const defaultPath = document.querySelector(item.path)
+    const mobilePath = item.mobilePath ? document.querySelector(item.mobilePath) : null
+    const path = mobilePath && getComputedStyle(mobilePath).display !== 'none'
+      ? mobilePath
+      : defaultPath
     const svg = document.querySelector(item.svg)
     if (!element || !path || !svg) return null
 
     return {
       ...item,
+      defaultPath,
       element,
       length: path.getTotalLength(),
       mapPoint: getSvgMapper(svg),
+      mobilePath,
       path,
       svg,
     }
   }).filter(Boolean)
+}
+
+function getActivePath(item) {
+  if (item.mobilePath && getComputedStyle(item.mobilePath).display !== 'none') {
+    return item.mobilePath
+  }
+
+  return item.defaultPath
 }
 
 function shouldRun() {
@@ -106,7 +120,9 @@ function startSceneMotion() {
   const refreshGeometry = () => {
     items = items.map((item) => ({
       ...item,
+      length: getActivePath(item).getTotalLength(),
       mapPoint: getSvgMapper(item.svg),
+      path: getActivePath(item),
     }))
   }
 
