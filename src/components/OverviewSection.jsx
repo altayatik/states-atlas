@@ -3,7 +3,6 @@ import { ArrowRight, Compass, MapPinned, Medal, Mountain, Sparkles } from 'lucid
 import { getOfficialParkDisplayName } from '../data/nationalParks'
 import { formatStatus } from '../utils/formatters'
 import { calculateTotal, getRankedRows } from '../utils/parkScoring'
-import { RegionalProgress } from './StatsCards'
 
 function prefersReducedMotion() {
   return typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
@@ -42,6 +41,20 @@ function StatStamp({ value, unit, label, sub, tone, rotate, delay }) {
   )
 }
 
+function MiniRegionDial({ region }) {
+  const percent = Math.min(100, Math.max(0, Math.round(region.percent)))
+  return (
+    <div className="mini-region" style={{ '--p': `${percent}%` }}>
+      <span className="mini-region__dial">
+        <span className="mini-region__ring" aria-hidden="true" />
+        <strong>{percent}%</strong>
+      </span>
+      <span className="mini-region__label">{region.region}</span>
+      <small>{region.visited}/{region.total}</small>
+    </div>
+  )
+}
+
 function formatUpdatedAt(value) {
   if (!value) return ''
   const date = new Date(value)
@@ -57,6 +70,7 @@ function getLatestState(states) {
 
 export function OverviewSection({ achievements, parkRankings, regions, states, stats }) {
   const progress = Math.min(100, Math.max(0, Math.round(stats.completionPercent)))
+  const overviewRegions = regions.filter((region) => region.region !== 'Canada')
   const latestState = getLatestState(states)
   const unlockedCount = achievements.filter((achievement) => achievement.unlocked).length
   const topPark = getRankedRows(parkRankings)[0]?.ranking
@@ -103,7 +117,7 @@ export function OverviewSection({ achievements, parkRankings, regions, states, s
         </div>
 
         <div className="route-board__right">
-          <aside className="dial route-board__dial" style={{ '--p': `${progress}%` }} aria-label={`${progress}% of the lower 48 explored`}>
+          <aside className="dial route-board__dial" style={{ '--p': `${progress}%` }} aria-label={`${progress}% of the 50 states explored`}>
             <span className="dial__dashes" aria-hidden="true" />
             <span className="dial__ring" aria-hidden="true" />
             <span className="dial__face">
@@ -111,6 +125,11 @@ export function OverviewSection({ achievements, parkRankings, regions, states, s
               <span>explored</span>
             </span>
           </aside>
+          <div className="mini-regions" aria-label="Progress by US region">
+            {overviewRegions.map((region) => (
+              <MiniRegionDial key={region.region} region={region} />
+            ))}
+          </div>
           <div className="route-board__ticket" aria-label="Latest dispatch">
             <span>Latest stop</span>
             <strong>{latestState ? latestState.name : 'Open road'}</strong>
@@ -175,16 +194,6 @@ export function OverviewSection({ achievements, parkRankings, regions, states, s
         </aside>
       </section>
 
-      <section className="overview-regions" aria-label="Progress by region">
-        <div className="section-header">
-          <div>
-            <p className="eyebrow"><Sparkles size={15} aria-hidden="true" /> Region by region</p>
-            <h2>How the country is filling in</h2>
-          </div>
-          <p>{stats.parksMarked} parks logged across {stats.statesVisited} states.</p>
-        </div>
-        <RegionalProgress regions={regions} />
-      </section>
     </main>
   )
 }

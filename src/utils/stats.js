@@ -7,7 +7,7 @@ export function isVisited(state) {
 }
 
 function isUsState(state) {
-  return state?.kind !== 'country'
+  return state?.kind === 'state'
 }
 
 function countUniqueLoggedItems(states, field) {
