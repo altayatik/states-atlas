@@ -889,9 +889,10 @@ input[type='checkbox'] { width: 1.1em; height: 1.1em; margin: 0; accent-color: v
 .dispatch-travel-stamp__postmark::before { top: 18px; transform: rotate(-6deg); }
 .dispatch-travel-stamp__postmark::after { top: 31px; transform: rotate(-6deg); }
 .dispatch-travel-stamp__compass {
-  grid-area: compass;
+  position: absolute;
+  right: 23px;
+  top: 20px;
   z-index: 1;
-  align-self: start;
   display: inline-flex; align-items: center; justify-content: center;
   width: 40px; aspect-ratio: 1; color: var(--sky);
   background: rgba(255, 253, 248, 0.82);
