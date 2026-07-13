@@ -10,11 +10,17 @@ import { isPlaceOptionSelected } from './utils/places'
 import { mergeStoredStates } from './utils/storage'
 import './styles.css'
 
-const Achievements = lazy(() => import('./components/Achievements').then((module) => ({ default: module.Achievements })))
-const AtlasEditor = lazy(() => import('./components/AtlasEditor').then((module) => ({ default: module.AtlasEditor })))
-const NationalParksEditor = lazy(() => import('./components/NationalParksEditor').then((module) => ({ default: module.NationalParksEditor })))
-const NationalParksSection = lazy(() => import('./components/NationalParksSection').then((module) => ({ default: module.NationalParksSection })))
-const StatesSection = lazy(() => import('./components/StatesSection').then((module) => ({ default: module.StatesSection })))
+const loadAchievements = () => import('./components/Achievements')
+const loadAtlasEditor = () => import('./components/AtlasEditor')
+const loadNationalParksEditor = () => import('./components/NationalParksEditor')
+const loadNationalParksSection = () => import('./components/NationalParksSection')
+const loadStatesSection = () => import('./components/StatesSection')
+
+const Achievements = lazy(() => loadAchievements().then((module) => ({ default: module.Achievements })))
+const AtlasEditor = lazy(() => loadAtlasEditor().then((module) => ({ default: module.AtlasEditor })))
+const NationalParksEditor = lazy(() => loadNationalParksEditor().then((module) => ({ default: module.NationalParksEditor })))
+const NationalParksSection = lazy(() => loadNationalParksSection().then((module) => ({ default: module.NationalParksSection })))
+const StatesSection = lazy(() => loadStatesSection().then((module) => ({ default: module.StatesSection })))
 
 const ATLAS_ADMIN_EMAILS = [
   'altayatik01@gmail.com',
@@ -38,6 +44,14 @@ function runAfterFirstPaint(callback) {
 
   const timeoutId = window.setTimeout(callback, 120)
   return () => window.clearTimeout(timeoutId)
+}
+
+function preloadPublicSections() {
+  return Promise.allSettled([
+    loadAchievements(),
+    loadNationalParksSection(),
+    loadStatesSection(),
+  ])
 }
 
 function getParkMarkerForRanking(ranking) {
@@ -123,6 +137,7 @@ function App() {
   const [selectedStateCode, setSelectedStateCode] = useState('')
   const [isLoadingEntries, setIsLoadingEntries] = useState(true)
   const [isLoadingParks, setIsLoadingParks] = useState(true)
+  const [isWarmingAtlas, setIsWarmingAtlas] = useState(() => !getIsEditorRoute())
   const [parksLoadError, setParksLoadError] = useState('')
   const [isEditorRoute, setIsEditorRoute] = useState(getIsEditorRoute)
   const [activeSection, setActiveSection] = useState(getActiveSection)
@@ -156,7 +171,7 @@ function App() {
     const root = document.documentElement
     const syncSceneMotion = () => {
       root.dataset.atlasSection = isEditorRoute ? 'edit' : activeSection
-      root.dataset.atlasMotion = !document.hidden && !isEditorRoute && activeSection === 'overview'
+      root.dataset.atlasMotion = !document.hidden && !isEditorRoute
         ? 'running'
         : 'paused'
     }
@@ -167,6 +182,29 @@ function App() {
       document.removeEventListener('visibilitychange', syncSceneMotion)
     }
   }, [activeSection, isEditorRoute])
+
+  useEffect(() => {
+    if (isEditorRoute) {
+      setIsWarmingAtlas(false)
+      return undefined
+    }
+
+    let isMounted = true
+    setIsWarmingAtlas(true)
+
+    const cancelWarmup = runAfterFirstPaint(() => {
+      const minimumDisplay = new Promise((resolve) => window.setTimeout(resolve, 520))
+
+      Promise.all([preloadPublicSections(), minimumDisplay]).finally(() => {
+        if (isMounted) setIsWarmingAtlas(false)
+      })
+    })
+
+    return () => {
+      isMounted = false
+      cancelWarmup()
+    }
+  }, [isEditorRoute])
 
   useEffect(() => {
     if (!isEditorRoute) {
@@ -442,6 +480,20 @@ function App() {
               />
             </Suspense>
           )}
+        </main>
+      </div>
+    )
+  }
+
+  if (isWarmingAtlas) {
+    return (
+      <div className="shell shell--loading">
+        <main className="atlas-loader" aria-live="polite" aria-label="Loading Travel Atlas">
+          <span className="atlas-loader__mark" aria-hidden="true">
+            <span />
+          </span>
+          <p className="eyebrow">Travel Atlas</p>
+          <h1>Getting the road ready.</h1>
         </main>
       </div>
     )
