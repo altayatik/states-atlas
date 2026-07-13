@@ -203,27 +203,21 @@ export function OverviewSection({ achievements, parkRankings, regions, states, s
             </div>
           </div>
           <div className="dispatch-postcard" aria-hidden="true">
-            <span className="dispatch-postcard__photo">
-              <span className="dispatch-postcard__sun" />
-              <span className="dispatch-postcard__route" />
-              <span className="dispatch-postcard__pin dispatch-postcard__pin--one" />
-              <span className="dispatch-postcard__pin dispatch-postcard__pin--two" />
-              <span className="dispatch-postcard__pin dispatch-postcard__pin--three" />
-            </span>
-            <span className="dispatch-postcard__destination">
-              <span>Latest stop</span>
-              <strong>{latestState?.name ?? 'Pick a state'}</strong>
-            </span>
-            <span className="dispatch-postcard__ticket">
-              <span>Weekend</span>
-              <strong>{latestState?.code ?? 'GO'}</strong>
-            </span>
-            <span className="dispatch-postcard__stamp">
-              <Compass size={16} aria-hidden="true" />
-            </span>
-            <span className="dispatch-postcard__progress">
-              <span>Route</span>
-              <strong>{stats.statesVisited}/{stats.statesTotal}</strong>
+            <span className="dispatch-travel-stamp">
+              <span className="dispatch-travel-stamp__edge dispatch-travel-stamp__edge--top" />
+              <span className="dispatch-travel-stamp__edge dispatch-travel-stamp__edge--right" />
+              <span className="dispatch-travel-stamp__edge dispatch-travel-stamp__edge--bottom" />
+              <span className="dispatch-travel-stamp__edge dispatch-travel-stamp__edge--left" />
+              <span className="dispatch-travel-stamp__postmark" />
+              <span className="dispatch-travel-stamp__compass">
+                <Compass size={18} aria-hidden="true" />
+              </span>
+              <span className="dispatch-travel-stamp__label">Latest stop</span>
+              <strong className="dispatch-travel-stamp__code">{latestState?.code ?? 'GO'}</strong>
+              <span className="dispatch-travel-stamp__state">{latestState?.name ?? 'Pick a state'}</span>
+              <span className="dispatch-travel-stamp__date">
+                {formatUpdatedAt(latestState?.updatedAt) || 'Ready when you are'}
+              </span>
             </span>
           </div>
           <div className="dispatch-panel__footer">
