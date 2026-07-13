@@ -1636,12 +1636,19 @@ input[type='checkbox'] { width: 1.1em; height: 1.1em; margin: 0; accent-color: v
 }
 
 @media (max-width: 680px) {
-  .topbar { flex-wrap: wrap; gap: 0.5rem; }
-  .topbar::before { -webkit-backdrop-filter: none; backdrop-filter: none; }
-  .topbar__nav { order: 3; width: 100%; margin: 0; justify-content: space-between; overflow-x: auto; scrollbar-width: none; }
+  .topbar {
+    flex-wrap: wrap; align-items: center; gap: 0.62rem 0.7rem;
+    width: calc(100% - 1rem); margin-top: 0.55rem; padding: 0.62rem 0.62rem 0.72rem;
+  }
+  .topbar::before { border-radius: 30px; -webkit-backdrop-filter: none; backdrop-filter: none; }
+  .topbar__brand { flex: 1 1 auto; min-width: 0; padding-left: 0; }
+  .topbar__edit { flex: 0 0 auto; margin-left: auto; }
+  .topbar__nav {
+    order: 3; width: 100%; margin: 0; justify-content: center; gap: clamp(0.2rem, 1.7vw, 0.55rem);
+    overflow-x: auto; scrollbar-width: none;
+  }
   .topbar__nav::-webkit-scrollbar { display: none; }
   .topbar__nav a { white-space: nowrap; }
-  .topbar__edit { margin-left: auto; }
   .hero { grid-template-columns: 1fr; grid-template-areas: 'copy' 'ring' 'stats'; }
   .hero__ring { justify-self: center; }
   .hero__stats { grid-template-columns: repeat(2, 1fr); gap: 1rem 0.75rem; }
