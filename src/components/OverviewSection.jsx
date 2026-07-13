@@ -203,11 +203,16 @@ export function OverviewSection({ achievements, parkRankings, regions, states, s
             </div>
           </div>
           <div className="dispatch-postcard" aria-hidden="true">
-            <span className="dispatch-postcard__map">
+            <span className="dispatch-postcard__photo">
+              <span className="dispatch-postcard__sun" />
               <span className="dispatch-postcard__route" />
               <span className="dispatch-postcard__pin dispatch-postcard__pin--one" />
               <span className="dispatch-postcard__pin dispatch-postcard__pin--two" />
               <span className="dispatch-postcard__pin dispatch-postcard__pin--three" />
+            </span>
+            <span className="dispatch-postcard__destination">
+              <span>Latest stop</span>
+              <strong>{latestState?.name ?? 'Pick a state'}</strong>
             </span>
             <span className="dispatch-postcard__ticket">
               <span>Weekend</span>
@@ -216,7 +221,10 @@ export function OverviewSection({ achievements, parkRankings, regions, states, s
             <span className="dispatch-postcard__stamp">
               <Compass size={16} aria-hidden="true" />
             </span>
-            <span className="dispatch-postcard__sticker">50</span>
+            <span className="dispatch-postcard__progress">
+              <span>Route</span>
+              <strong>{stats.statesVisited}/{stats.statesTotal}</strong>
+            </span>
           </div>
           <div className="dispatch-panel__footer">
             <span><TentTree size={14} aria-hidden="true" /> Pack a weekend bag</span>
