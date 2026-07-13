@@ -735,7 +735,8 @@ input[type='checkbox'] { width: 1.1em; height: 1.1em; margin: 0; accent-color: v
 .route-stop:hover .route-stop__go svg { transform: translateX(4px); }
 
 .dispatch-panel {
-  align-self: start;
+  align-self: stretch;
+  position: relative; overflow: hidden;
   display: flex; flex-direction: column; gap: 0.75rem;
   padding: clamp(1rem, 1.8vw, 1.25rem);
   background:
@@ -743,11 +744,64 @@ input[type='checkbox'] { width: 1.1em; height: 1.1em; margin: 0; accent-color: v
     repeating-linear-gradient(0deg, transparent, transparent 28px, rgba(74, 56, 34, 0.06) 29px);
   border: 1px solid var(--line); border-radius: var(--r-lg); box-shadow: var(--sh-2), var(--sh-inset);
 }
+.dispatch-panel__content { position: relative; z-index: 1; }
 .dispatch-panel h2 { max-width: 12ch; font-size: clamp(1.22rem, 1rem + 0.75vw, 1.55rem); line-height: 1.04; letter-spacing: -0.035em; }
 .dispatch-panel__rows { display: flex; flex-direction: column; gap: 0.5rem; margin-top: 0.25rem; }
 .dispatch-panel__rows div { padding-top: 0.5rem; border-top: 1px solid var(--line); }
 .dispatch-panel__rows span { display: block; font-size: 0.64rem; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-3); }
 .dispatch-panel__rows strong { display: block; margin-top: 0.1rem; font-size: 0.9rem; line-height: 1.18; color: var(--ink); }
+.dispatch-postcard {
+  position: relative; z-index: 0; flex: 1 1 auto; min-height: 170px; margin-top: auto;
+  border-radius: calc(var(--r-lg) - 8px); overflow: hidden;
+  background:
+    linear-gradient(180deg, rgba(255, 229, 177, 0.34), rgba(231, 238, 210, 0.48)),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.5), rgba(255, 246, 226, 0.1));
+  border: 1px solid rgba(74, 56, 34, 0.08);
+}
+.dispatch-postcard__sun {
+  position: absolute; top: 16%; right: 18%; width: 52px; aspect-ratio: 1; border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 210, 104, 0.88), rgba(255, 205, 125, 0.24) 68%, transparent 70%);
+}
+.dispatch-postcard__mountain {
+  position: absolute; bottom: 0; width: 70%; height: 58%;
+  clip-path: polygon(0 100%, 50% 22%, 100% 100%);
+  background: rgba(201, 139, 90, 0.17);
+}
+.dispatch-postcard__mountain--one { left: -18%; }
+.dispatch-postcard__mountain--two { right: -25%; height: 66%; background: rgba(122, 155, 87, 0.14); }
+.dispatch-postcard__road {
+  position: absolute; left: -14%; right: -18%; bottom: 14%; height: 30px; border-radius: 999px;
+  background:
+    repeating-linear-gradient(90deg, transparent 0 22px, rgba(255, 235, 178, 0.78) 22px 34px, transparent 34px 54px),
+    rgba(108, 84, 56, 0.28);
+  transform: rotate(-8deg);
+}
+.dispatch-postcard__car {
+  position: absolute; left: 24%; bottom: 20%; font-size: 1.35rem;
+  animation: postcard-drive 7s linear infinite;
+}
+.dispatch-postcard__plane {
+  position: absolute; right: 14%; top: 18%; font-size: 1.15rem;
+  animation: postcard-float 5.5s ease-in-out infinite;
+}
+.dispatch-panel__footer {
+  position: relative; z-index: 1; display: grid; gap: 0.15rem; padding-top: 0.65rem;
+  border-top: 1px solid var(--line);
+}
+.dispatch-panel__footer span {
+  display: inline-flex; align-items: center; gap: 0.35rem;
+  font-size: 0.68rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--terracotta);
+}
+.dispatch-panel__footer strong { font-size: 0.86rem; color: var(--ink); line-height: 1.2; }
+
+@keyframes postcard-drive {
+  from { transform: translateX(-32px) rotate(-8deg); }
+  to { transform: translateX(150px) rotate(-8deg); }
+}
+@keyframes postcard-float {
+  0%, 100% { transform: translate3d(0, 0, 0) rotate(-10deg); }
+  50% { transform: translate3d(-10px, 7px, 0) rotate(-4deg); }
+}
 
 @media (max-width: 980px) {
   .route-board { grid-template-columns: 1fr; min-height: auto; }
@@ -819,6 +873,7 @@ input[type='checkbox'] { width: 1.1em; height: 1.1em; margin: 0; accent-color: v
   .route-stop small { font-size: 0.8rem; }
   .route-stop__go { margin-top: 0.45rem; }
   .dispatch-panel { padding: 0.95rem; border-radius: var(--r-md); }
+  .dispatch-postcard { min-height: 115px; }
   .journey .dial__face,
   .journey .route-stop {
     -webkit-backdrop-filter: none;

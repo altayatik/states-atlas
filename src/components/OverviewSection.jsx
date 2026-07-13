@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { ArrowRight, Compass, MapPinned, Medal, Mountain, Sparkles } from 'lucide-react'
+import { ArrowRight, Compass, MapPinned, Medal, Mountain, Sparkles, TentTree } from 'lucide-react'
 import { getOfficialParkDisplayName } from '../data/nationalParks'
 import { formatStatus } from '../utils/formatters'
 import { calculateTotal, getRankedRows } from '../utils/parkScoring'
@@ -184,21 +184,35 @@ export function OverviewSection({ achievements, parkRankings, regions, states, s
         </div>
 
         <aside className="dispatch-panel" aria-label="Atlas dispatch">
-          <p className="eyebrow"><Sparkles size={15} aria-hidden="true" /> On deck</p>
-          <h2>The next good excuse to go.</h2>
-          <div className="dispatch-panel__rows">
-            <div>
-              <span>Current champion</span>
-              <strong>{topPark ? getOfficialParkDisplayName(topPark.parkName) : 'No park yet'}</strong>
+          <div className="dispatch-panel__content">
+            <p className="eyebrow"><Sparkles size={15} aria-hidden="true" /> On deck</p>
+            <h2>The next good excuse to go.</h2>
+            <div className="dispatch-panel__rows">
+              <div>
+                <span>Current champion</span>
+                <strong>{topPark ? getOfficialParkDisplayName(topPark.parkName) : 'No park yet'}</strong>
+              </div>
+              <div>
+                <span>Route coverage</span>
+                <strong>{stats.statesVisited}/{stats.statesTotal} US states</strong>
+              </div>
+              <div>
+                <span>Stamp progress</span>
+                <strong>{unlockedCount}/{achievements.length} earned</strong>
+              </div>
             </div>
-            <div>
-              <span>Route coverage</span>
-              <strong>{stats.statesVisited}/{stats.statesTotal} US states</strong>
-            </div>
-            <div>
-              <span>Stamp progress</span>
-              <strong>{unlockedCount}/{achievements.length} earned</strong>
-            </div>
+          </div>
+          <div className="dispatch-postcard" aria-hidden="true">
+            <span className="dispatch-postcard__sun" />
+            <span className="dispatch-postcard__mountain dispatch-postcard__mountain--one" />
+            <span className="dispatch-postcard__mountain dispatch-postcard__mountain--two" />
+            <span className="dispatch-postcard__road" />
+            <span className="dispatch-postcard__car">🚙</span>
+            <span className="dispatch-postcard__plane">✈️</span>
+          </div>
+          <div className="dispatch-panel__footer">
+            <span><TentTree size={14} aria-hidden="true" /> Pack a weekend bag</span>
+            <strong>{latestState ? `Last spark: ${latestState.name}` : 'First pin waiting'}</strong>
           </div>
         </aside>
       </section>
