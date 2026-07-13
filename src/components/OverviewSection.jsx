@@ -203,12 +203,20 @@ export function OverviewSection({ achievements, parkRankings, regions, states, s
             </div>
           </div>
           <div className="dispatch-postcard" aria-hidden="true">
-            <span className="dispatch-postcard__sun" />
-            <span className="dispatch-postcard__mountain dispatch-postcard__mountain--one" />
-            <span className="dispatch-postcard__mountain dispatch-postcard__mountain--two" />
-            <span className="dispatch-postcard__road" />
-            <span className="dispatch-postcard__car">🚙</span>
-            <span className="dispatch-postcard__plane">✈️</span>
+            <span className="dispatch-postcard__map">
+              <span className="dispatch-postcard__route" />
+              <span className="dispatch-postcard__pin dispatch-postcard__pin--one" />
+              <span className="dispatch-postcard__pin dispatch-postcard__pin--two" />
+              <span className="dispatch-postcard__pin dispatch-postcard__pin--three" />
+            </span>
+            <span className="dispatch-postcard__ticket">
+              <span>Weekend</span>
+              <strong>{latestState?.code ?? 'GO'}</strong>
+            </span>
+            <span className="dispatch-postcard__stamp">
+              <Compass size={16} aria-hidden="true" />
+            </span>
+            <span className="dispatch-postcard__sticker">50</span>
           </div>
           <div className="dispatch-panel__footer">
             <span><TentTree size={14} aria-hidden="true" /> Pack a weekend bag</span>
