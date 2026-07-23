@@ -122,7 +122,8 @@ function formatVisitedDate(visitedDate) {
 const LOCAL_POSTERS = new Set([
   'yosemite', 'joshuatree', 'sequoia', 'kingscanyon', 'hawaiivolcanoes', 'haleakala',
   'olympic', 'mountrainier', 'indianadunes', 'greatsmokymountains', 'cuyahogavalley',
-  'zion', 'mammothcave', 'gatewayarch', 'everglades', 'grandcanyon', 'glacier',
+  'zion', 'mammothcave', 'gatewayarch', 'everglades', 'grandcanyon', 'glacier', 'denali',
+  'kenaifjords',
 ])
 
 function localPosterKey(name) {
