@@ -3,15 +3,15 @@ export const scoreCategories = [
   { key: 'visitorCenter', label: 'Visitor Center', shortLabel: 'visitor center' },
   { key: 'facilities', label: 'Facilities', shortLabel: 'facilities' },
   { key: 'trails', label: 'Trails', shortLabel: 'trails' },
-  { key: 'roads', label: 'Roads', shortLabel: 'roads' },
+  { key: 'roads', label: 'Animals', shortLabel: 'animals' },
 ]
 
 export const defaultParkScores = {
-  scenery: 8,
-  visitorCenter: 7,
-  facilities: 7,
-  trails: 8,
-  roads: 7,
+  scenery: 16,
+  visitorCenter: 14,
+  facilities: 14,
+  trails: 16,
+  roads: 14,
 }
 
 export function normalizeScore(value) {
@@ -21,7 +21,7 @@ export function normalizeScore(value) {
     return 1
   }
 
-  return Math.min(10, Math.max(1, Math.round(numericValue)))
+  return Math.min(MAX_CATEGORY, Math.max(1, Math.round(numericValue)))
 }
 
 export function normalizeScores(scores) {
@@ -31,21 +31,25 @@ export function normalizeScores(scores) {
   }), {})
 }
 
-// Scores are entered on a 1–10 scale per category, but the atlas presents them
-// doubled: each category reads out of 20 and the total out of 100. Keeping the
-// stored scale at 1–10 means every existing ranking converts proportionally
-// (e.g. 37/50 → 74/100) with no data migration.
-export const SCORE_DISPLAY_SCALE = 2
-export const MAX_CATEGORY = 10 * SCORE_DISPLAY_SCALE
-export const MAX_TOTAL = 50 * SCORE_DISPLAY_SCALE
+export const SCORE_SCALE = 20
+export const LEGACY_SCORE_SCALE = 10
+export const MAX_CATEGORY = SCORE_SCALE
+export const MAX_TOTAL = scoreCategories.length * MAX_CATEGORY
+
+export function normalizeLegacyScores(scores) {
+  return scoreCategories.reduce((normalizedScores, category) => ({
+    ...normalizedScores,
+    [category.key]: normalizeScore(normalizeScore(scores?.[category.key]) * (SCORE_SCALE / LEGACY_SCORE_SCALE)),
+  }), {})
+}
 
 export function displayScore(value) {
-  return normalizeScore(value) * SCORE_DISPLAY_SCALE
+  return normalizeScore(value)
 }
 
 export function calculateTotal(scores) {
   const raw = scoreCategories.reduce((total, category) => total + normalizeScore(scores?.[category.key]), 0)
-  return raw * SCORE_DISPLAY_SCALE
+  return raw
 }
 
 export function calculateAverage(scores) {
@@ -55,15 +59,15 @@ export function calculateAverage(scores) {
 export function getScoreTone(score) {
   const normalizedScore = normalizeScore(score)
 
-  if (normalizedScore <= 3) {
+  if (normalizedScore <= 6) {
     return { background: '#ffe1d5', color: '#d9583b', text: '#5f2216' }
   }
 
-  if (normalizedScore <= 6) {
+  if (normalizedScore <= 12) {
     return { background: '#fff0bc', color: '#d99a22', text: '#563a08' }
   }
 
-  if (normalizedScore <= 8) {
+  if (normalizedScore <= 16) {
     return { background: '#e8f4cf', color: '#81ad4d', text: '#243e16' }
   }
 

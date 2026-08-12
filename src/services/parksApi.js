@@ -9,7 +9,7 @@ import {
 } from 'firebase/firestore'
 import { getFirebaseDb, isFirebaseConfigured } from './firebaseClient'
 import { getOfficialParkByName, getOfficialParkCountry } from '../data/nationalParks'
-import { normalizeScores, sortRankings } from '../utils/parkScoring'
+import { normalizeLegacyScores, normalizeScores, SCORE_SCALE, sortRankings } from '../utils/parkScoring'
 
 const RANKINGS_COLLECTION = 'parkRankings'
 
@@ -29,6 +29,8 @@ function getParkState(parkName, isCustom) {
 }
 
 function toParkRanking(row = {}) {
+  const scoreNormalizer = row.score_scale === SCORE_SCALE ? normalizeScores : normalizeLegacyScores
+
   return {
     createdAt: toIsoDate(row.created_at),
     honorableMention: Boolean(row.honorable_mention),
@@ -37,7 +39,7 @@ function toParkRanking(row = {}) {
     notes: row.notes ?? '',
     parkCode: row.park_code ?? '',
     parkName: row.park_name,
-    scores: normalizeScores({
+    scores: scoreNormalizer({
       facilities: row.facilities,
       roads: row.roads,
       scenery: row.scenery,
@@ -64,6 +66,7 @@ function toDatabaseRanking(ranking) {
     park_name: ranking.parkName,
     roads: scores.roads,
     scenery: scores.scenery,
+    score_scale: SCORE_SCALE,
     trails: scores.trails,
     visited_date: ranking.visitedDate || null,
     visitor_center: scores.visitorCenter,

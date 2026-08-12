@@ -107,7 +107,7 @@ const CATEGORY_LABEL = {
   visitorCenter: 'Visitor Ctr',
   facilities: 'Facilities',
   trails: 'Trails',
-  roads: 'Roads',
+  roads: 'Animals',
 }
 
 function formatVisitedDate(visitedDate) {
@@ -380,7 +380,7 @@ export function NationalParksSection({ activeScope = 'us', isLoading, loadError,
           <h1>Ranked, framed &amp; hung on the wall.</h1>
           <p className="parks-masthead__note">
             Every park we&rsquo;ve walked, printed as its own field poster and scored out of 100 across
-            scenery, visitor centers, facilities, trails, and roads.
+            scenery, visitor centers, facilities, trails, and animals.
           </p>
         </div>
 

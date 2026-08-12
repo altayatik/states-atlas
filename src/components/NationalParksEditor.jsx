@@ -7,7 +7,7 @@ import {
   getOfficialParksByCountry,
   officialParks,
 } from '../data/nationalParks'
-import { calculateTotal, defaultParkScores, displayScore, normalizeScores, scoreCategories } from '../utils/parkScoring'
+import { calculateTotal, defaultParkScores, displayScore, MAX_CATEGORY, normalizeScores, scoreCategories } from '../utils/parkScoring'
 import { ParkPoster, ParkThumb } from './NationalParksSection'
 
 function cloneRanking(ranking) {
@@ -459,8 +459,9 @@ export function NationalParksEditor({ isLoading, onDelete, onSave, rankings }) {
                         <strong>{displayScore(draft.scores[category.key])}<em>/20</em></strong>
                       </span>
                       <input
-                        max="10"
+                        max={MAX_CATEGORY}
                         min="1"
+                        step="1"
                         type="range"
                         value={draft.scores[category.key]}
                         onChange={(event) => updateScore(category.key, event.target.value)}
